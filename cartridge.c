@@ -69,12 +69,22 @@ uint8_t getFlagValue__(uint8_t byte, uint8_t mask)
 Cartridge* cartridgeInsert(const char* filename)
 {
     FILE* romFile = fopen(filename, "r");
+    if(romFile == NULL)
+    {
+        printf("ROM file not found\n");
+        return NULL;
+    }
+
     Cartridge* cartridge = malloc( sizeof(struct cartridge__) );
 
     size_t itemsRead = fread(&cartridge->header, sizeof(struct header__), 1, romFile);
 
-    if( itemsRead == 0 || getFlagValue__(cartridge->header.flags7, CARTRIDGE_NES_2_0_MASK) == 2 )
+    if( itemsRead == 0 || cartridge->header.nes[0] != 'N' || cartridge->header.nes[1] != 'E' ||
+        cartridge->header.nes[2] != 'S' || cartridge->header.nes[3] != 0x1A ||
+        getFlagValue__(cartridge->header.flags7, CARTRIDGE_NES_2_0_MASK) == 2 ||
+        cartridge->header.chrRomSteps == 0 )
     {
+        printf("ROM corrupted or not supported\n");
         free(cartridge);
         return NULL;
     }
