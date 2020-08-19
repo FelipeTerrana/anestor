@@ -3,7 +3,7 @@ project(anestor)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(anestor main.c cartridge.c cartridge.h cpu.c cpu.h)
+add_executable(anestor main.c cartridge.c cartridge.h cpu/cpu.c cpu/cpu.h cpu/instructions.c cpu/instructions.h cpu/memory.c cpu/memory.h)
 
 include(FindPkgConfig)
 pkg_search_module(SDL2 REQUIRED sdl2)

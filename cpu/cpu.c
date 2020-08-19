@@ -1,77 +1,14 @@
 #include "cpu.h"
 
 #include <stdint.h>
-#include "cartridge.h"
-
-
-
-#define CPU_RAM_SIZE 0x0800
-
-#define PPU_REGISTERS_START 0x2000
-#define PPU_REGISTERS_SIZE 0x0008
-
-#define APU_IO_REGISTERS_START 0x4000
-#define APU_IO_TEST_REGISTERS_START 0x4018
-#define CPU_CARTRIDGE_SPACE_START 0x4020
-
-#define CPU_RAM_STACK_START 0x0100
-
-struct cpu_registers__ {
-    uint8_t acc;
-    uint8_t x, y;
-    uint16_t pc;
-    uint8_t s;
-    uint8_t p;
-};
+#include "instructions.h"
 
 struct cpu__ {
-    struct cpu_registers__ registers;
-    uint8_t ram[CPU_RAM_SIZE];
-    // TODO ponteiro pra PPU
-    // TODO ponteiro pra APU
-    Cartridge* cartridge;
+    CpuRegisters* registers;
+    CpuMemory* memory;
 };
 
-
-
-enum AddressingMode
-{
-    ADDRESSING_IMPLIED = 1,
-    ADDRESSING_ACCUMULATOR = 2,
-    ADDRESSING_IMMEDIATE = 3,
-    ADDRESSING_ZERO_PAGE = 4,
-    ADDRESSING_ZERO_PAGE_X = 5,
-    ADDRESSING_ZERO_PAGE_Y = 6,
-    ADDRESSING_RELATIVE = 7,
-    ADDRESSING_ABSOLUTE = 8,
-    ADDRESSING_ABSOLUTE_X = 9,
-    ADDRESSING_ABSOLUTE_Y = 10,
-    ADDRESSING_INDIRECT = 11,
-    ADDRESSING_INDIRECT_X = 12,
-    ADDRESSING_INDIRECT_Y = 13,
-
-    ADDRESSING_INVALID = 0
-};
-
-static const uint8_t ADRESSING_EXTRA_BYTES[] = {
-        [ADDRESSING_IMPLIED] = 0,
-        [ADDRESSING_ACCUMULATOR] = 0,
-        [ADDRESSING_IMMEDIATE] = 1,
-        [ADDRESSING_ZERO_PAGE] = 1,
-        [ADDRESSING_ZERO_PAGE_X] = 1,
-        [ADDRESSING_ZERO_PAGE_Y] = 1,
-        [ADDRESSING_RELATIVE] = 1,
-        [ADDRESSING_ABSOLUTE] = 2,
-        [ADDRESSING_ABSOLUTE_X] = 2,
-        [ADDRESSING_ABSOLUTE_Y] = 2,
-        [ADDRESSING_INDIRECT] = 2,
-        [ADDRESSING_INDIRECT_X] = 1,
-        [ADDRESSING_INDIRECT_Y] = 1,
-
-        [ADDRESSING_INVALID] = -1
-};
-
-static enum AddressingMode getAddressingMode(uint8_t instruction)
+static enum AddressingMode getAddressingMode__(uint8_t instruction)
 {
     static const enum AddressingMode INSTRUCTION_ADDRESSING_EXCEPTIONS[0x100] = {
             [0x96] = ADDRESSING_ZERO_PAGE_Y,
