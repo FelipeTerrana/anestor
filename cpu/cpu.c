@@ -1,5 +1,6 @@
 #include "cpu.h"
 
+#include <stdlib.h>
 #include <stdint.h>
 #include "instructions.h"
 
@@ -8,12 +9,18 @@ struct cpu__ {
     CpuMemory* memory;
 };
 
+
+
 static enum AddressingMode getAddressingMode__(uint8_t instruction)
 {
-    static const enum AddressingMode INSTRUCTION_ADDRESSING_EXCEPTIONS[0x100] = {
+    static const enum AddressingMode EXCEPTIONS[0x100] = {
             [0x96] = ADDRESSING_ZERO_PAGE_Y,
             [0xB6] = ADDRESSING_ZERO_PAGE_Y,
             [0xBE] = ADDRESSING_ABSOLUTE_Y,
+
+            [0x4C] = ADDRESSING_ABSOLUTE,
+            [0x6C] = ADDRESSING_INDIRECT,
+
             [0x10] = ADDRESSING_RELATIVE,
             [0x30] = ADDRESSING_RELATIVE,
             [0x50] = ADDRESSING_RELATIVE,
@@ -22,10 +29,12 @@ static enum AddressingMode getAddressingMode__(uint8_t instruction)
             [0xB0] = ADDRESSING_RELATIVE,
             [0xD0] = ADDRESSING_RELATIVE,
             [0xF0] = ADDRESSING_RELATIVE,
+
             [0x00] = ADDRESSING_IMPLIED,
             [0x20] = ADDRESSING_ABSOLUTE,
             [0x40] = ADDRESSING_IMPLIED,
             [0x60] = ADDRESSING_IMPLIED,
+
             [0x08] = ADDRESSING_IMPLIED,
             [0x28] = ADDRESSING_IMPLIED,
             [0x48] = ADDRESSING_IMPLIED,
@@ -34,6 +43,7 @@ static enum AddressingMode getAddressingMode__(uint8_t instruction)
             [0xA8] = ADDRESSING_IMPLIED,
             [0xC8] = ADDRESSING_IMPLIED,
             [0xE8] = ADDRESSING_IMPLIED,
+
             [0x18] = ADDRESSING_IMPLIED,
             [0x38] = ADDRESSING_IMPLIED,
             [0x58] = ADDRESSING_IMPLIED,
@@ -42,6 +52,7 @@ static enum AddressingMode getAddressingMode__(uint8_t instruction)
             [0xB8] = ADDRESSING_IMPLIED,
             [0xD8] = ADDRESSING_IMPLIED,
             [0xF8] = ADDRESSING_IMPLIED,
+
             [0x8A] = ADDRESSING_IMPLIED,
             [0x9A] = ADDRESSING_IMPLIED,
             [0xAA] = ADDRESSING_IMPLIED,
@@ -52,7 +63,7 @@ static enum AddressingMode getAddressingMode__(uint8_t instruction)
             [0xFF] = ADDRESSING_INVALID
     };
 
-    static const enum AddressingMode INSTRUCTION_ADDRESSING_CC_BBB[0x4][0x8] = {
+    static const enum AddressingMode CC_BBB[0x4][0x8] = {
             [0x1] = {
                     [0x0] = ADDRESSING_INDIRECT_X,
                     [0x1] = ADDRESSING_ZERO_PAGE,
@@ -90,7 +101,7 @@ static enum AddressingMode getAddressingMode__(uint8_t instruction)
     };
 
     uint8_t bbb, cc;
-    uint8_t addressing = INSTRUCTION_ADDRESSING_EXCEPTIONS[instruction];
+    uint8_t addressing = EXCEPTIONS[instruction];
 
     if(addressing != ADDRESSING_INVALID)
         return addressing;
@@ -100,5 +111,109 @@ static enum AddressingMode getAddressingMode__(uint8_t instruction)
 
     bbb = instruction & 0x7u;
 
-    return INSTRUCTION_ADDRESSING_CC_BBB[cc][bbb];
+    return CC_BBB[cc][bbb];
+}
+
+
+
+static uint8_t (*getInstructionFunction__(uint8_t instruction)) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*)
+{
+    static uint8_t (*EXCEPTIONS[0x100]) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = {
+            [0x96] = stx,
+            [0xB6] = ldx,
+            [0xBE] = ldx,
+
+            [0x4C] = jmp,
+            [0x6C] = jmp,
+
+            [0x10] = bpl,
+            [0x30] = bmi,
+            [0x50] = bvc,
+            [0x70] = bvs,
+            [0x90] = bcc,
+            [0xB0] = bcs,
+            [0xD0] = bne,
+            [0xF0] = beq,
+
+            [0x00] = brk,
+            [0x20] = jsr,
+            [0x40] = rti,
+            [0x60] = rts,
+
+            [0x08] = php,
+            [0x28] = plp,
+            [0x48] = pha,
+            [0x68] = pla,
+            [0x88] = dey,
+            [0xA8] = tay,
+            [0xC8] = iny,
+            [0xE8] = inx,
+
+            [0x18] = clc,
+            [0x38] = sec,
+            [0x58] = cli,
+            [0x78] = sei,
+            [0x98] = tya,
+            [0xB8] = clv,
+            [0xD8] = cld,
+            [0xF8] = sed,
+
+            [0x8A] = txa,
+            [0x9A] = txs,
+            [0xAA] = tax,
+            [0xBA] = tsx,
+            [0xCA] = dex,
+            [0xEA] = nop,
+
+            [0xFF] = NULL
+    };
+
+    static uint8_t (*CC_AAA[0x4][0x8]) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = {
+            [0x1] = {
+                    [0x0] = ora,
+                    [0x1] = and,
+                    [0x2] = eor,
+                    [0x3] = adc,
+                    [0x4] = sta,
+                    [0x5] = lda,
+                    [0x6] = cmp,
+                    [0x7] = sbc
+            },
+            [0x2] = {
+                    [0x0] = asl,
+                    [0x1] = rol,
+                    [0x2] = lsr,
+                    [0x3] = ror,
+                    [0x4] = stx,
+                    [0x5] = ldx,
+                    [0x6] = dec,
+                    [0x7] = inc
+            },
+            [0x0] = {
+                    [0x1] = bit,
+                    [0x4] = sty,
+                    [0x5] = ldy,
+                    [0x6] = cpy,
+                    [0x7] = cpx,
+
+                    [0x0] = NULL,
+                    [0x2] = NULL,
+                    [0x3] = NULL
+            },
+
+            [0x3] = { NULL }
+    };
+
+    uint8_t aaa, cc;
+    uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = EXCEPTIONS[instruction];
+
+    if(instructionFunction != NULL)
+        return instructionFunction;
+
+    cc = instruction & 0x3u;
+    instruction >>= 5u;
+
+    aaa = instruction & 0x7u;
+
+    return CC_AAA[cc][aaa];
 }
