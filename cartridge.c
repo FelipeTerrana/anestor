@@ -50,7 +50,7 @@ struct cartridge__ {
 
 
 
-uint8_t getFlagValue__(uint8_t byte, uint8_t mask)
+static uint8_t getFlagValue__(uint8_t byte, uint8_t mask)
 {
     if (mask == 0)
         return 0;
