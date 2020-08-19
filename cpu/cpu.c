@@ -11,7 +11,7 @@ struct cpu__ {
 
 
 
-static enum AddressingMode getAddressingMode__(uint8_t instruction)
+static enum AddressingMode getAddressingMode__(uint8_t opcode)
 {
     static const enum AddressingMode EXCEPTIONS[0x100] = {
             [0x96] = ADDRESSING_ZERO_PAGE_Y,
@@ -101,22 +101,22 @@ static enum AddressingMode getAddressingMode__(uint8_t instruction)
     };
 
     uint8_t bbb, cc;
-    uint8_t addressing = EXCEPTIONS[instruction];
+    uint8_t addressing = EXCEPTIONS[opcode];
 
     if(addressing != ADDRESSING_INVALID)
         return addressing;
 
-    cc = instruction & 0x3u;
-    instruction >>= 2u;
+    cc = opcode & 0x3u;
+    opcode >>= 2u;
 
-    bbb = instruction & 0x7u;
+    bbb = opcode & 0x7u;
 
     return CC_BBB[cc][bbb];
 }
 
 
 
-static uint8_t (*getInstructionFunction__(uint8_t instruction)) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*)
+static uint8_t (*getInstructionFunction__(uint8_t opcode)) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*)
 {
     static uint8_t (*EXCEPTIONS[0x100]) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = {
             [0x96] = stx,
@@ -205,15 +205,52 @@ static uint8_t (*getInstructionFunction__(uint8_t instruction)) (CpuRegisters*, 
     };
 
     uint8_t aaa, cc;
-    uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = EXCEPTIONS[instruction];
+    uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = EXCEPTIONS[opcode];
 
     if(instructionFunction != NULL)
         return instructionFunction;
 
-    cc = instruction & 0x3u;
-    instruction >>= 5u;
+    cc = opcode & 0x3u;
+    opcode >>= 5u;
 
-    aaa = instruction & 0x7u;
+    aaa = opcode & 0x7u;
 
     return CC_AAA[cc][aaa];
+}
+
+
+
+#include <stdio.h>
+void testDecoder(uint8_t opcode)
+{
+    const char* ADDRESSING_MODE_NAME[] = {
+        [ADDRESSING_IMPLIED] = "ADDRESSING_IMPLIED",
+        [ADDRESSING_ACCUMULATOR] = "ADDRESSING_ACCUMULATOR",
+        [ADDRESSING_IMMEDIATE] = "ADDRESSING_IMMEDIATE",
+        [ADDRESSING_ZERO_PAGE] = "ADDRESSING_ZERO_PAGE",
+        [ADDRESSING_ZERO_PAGE_X] = "ADDRESSING_ZERO_PAGE_X",
+        [ADDRESSING_ZERO_PAGE_Y] = "ADDRESSING_ZERO_PAGE_Y",
+        [ADDRESSING_RELATIVE] = "ADDRESSING_RELATIVE",
+        [ADDRESSING_ABSOLUTE] = "ADDRESSING_ABSOLUTE",
+        [ADDRESSING_ABSOLUTE_X] = "ADDRESSING_ABSOLUTE_X",
+        [ADDRESSING_ABSOLUTE_Y] = "ADDRESSING_ABSOLUTE_Y",
+        [ADDRESSING_INDIRECT] = "ADDRESSING_INDIRECT",
+        [ADDRESSING_INDIRECT_X] = "ADDRESSING_INDIRECT_X",
+        [ADDRESSING_INDIRECT_Y] = "ADDRESSING_INDIRECT_Y",
+
+        [ADDRESSING_INVALID] = "ADDRESSING_INVALID"
+    };
+
+    enum AddressingMode addressingMode = getAddressingMode__(opcode);
+
+    uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) =
+            getInstructionFunction__(opcode);
+
+    printf("Opcode 0x%02X\n", opcode);
+    printf("%s\n", ADDRESSING_MODE_NAME[addressingMode]);
+
+    if(instructionFunction != NULL)
+        instructionFunction(NULL, NULL, addressingMode, NULL);
+    else
+        printf("No instruction\n");
 }

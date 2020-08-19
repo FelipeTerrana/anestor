@@ -1,12 +1,8 @@
-#include "cartridge.h"
+#include "cpu/cpu.h"
 
 int main(int argC, char* argV[])
 {
-    if(argC != 2)
-        return 0;
-
-    Cartridge* cartridge = cartridgeInsert(argV[1]);
-    cartridgeRemove(cartridge);
+    testDecoder(0xA6);
 
     return 0;
 }

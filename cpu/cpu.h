@@ -6,4 +6,6 @@
 
 typedef struct cpu__ Cpu;
 
+void testDecoder(uint8_t opcode);
+
 #endif //ANESTOR_CPU_H

@@ -79,6 +79,8 @@ Cartridge* cartridgeInsert(const char* filename)
 
     size_t itemsRead = fread(&cartridge->header, sizeof(struct header__), 1, romFile);
 
+    // TODO support CHR RAM
+    // TODO support iNES 2.0
     if( itemsRead == 0 || cartridge->header.nes[0] != 'N' || cartridge->header.nes[1] != 'E' ||
         cartridge->header.nes[2] != 'S' || cartridge->header.nes[3] != 0x1A ||
         getFlagValue__(cartridge->header.flags7, CARTRIDGE_NES_2_0_MASK) == 2 ||
