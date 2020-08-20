@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <time.h>
 #include "instructions.h"
 
 struct cpu__ {
@@ -10,6 +11,26 @@ struct cpu__ {
 };
 
 
+
+#define MAX_OPCODE_EXTRA_BYTES 2
+
+const uint8_t ADRESSING_EXTRA_BYTES[NUM_ADDRESSING_MODES] = {
+        [ADDRESSING_IMPLIED] = 0,
+        [ADDRESSING_ACCUMULATOR] = 0,
+        [ADDRESSING_IMMEDIATE] = 1,
+        [ADDRESSING_ZERO_PAGE] = 1,
+        [ADDRESSING_ZERO_PAGE_X] = 1,
+        [ADDRESSING_ZERO_PAGE_Y] = 1,
+        [ADDRESSING_RELATIVE] = 1,
+        [ADDRESSING_ABSOLUTE] = 2,
+        [ADDRESSING_ABSOLUTE_X] = 2,
+        [ADDRESSING_ABSOLUTE_Y] = 2,
+        [ADDRESSING_INDIRECT] = 2,
+        [ADDRESSING_INDIRECT_X] = 1,
+        [ADDRESSING_INDIRECT_Y] = 1,
+
+        [ADDRESSING_INVALID] = -1
+};
 
 static enum AddressingMode getAddressingMode__(uint8_t opcode)
 {
@@ -238,6 +259,43 @@ void cpuShutdown(Cpu* cpu)
     cpuMemoryShutdown(cpu->memory);
 
     free(cpu);
+}
+
+
+
+int cpuLoop(void* data)
+{
+    void** inputArray = data;
+    Cpu* cpu = inputArray[0];
+    bool* stopSignal = inputArray[1];
+
+    uint8_t extraBytes[MAX_OPCODE_EXTRA_BYTES];
+
+    while ( !(*stopSignal) )
+    {
+        uint8_t i;
+        clock_t realClockTicksToWait, realClockOnStart = clock();
+        uint8_t instructionClockTicks;
+        uint8_t opcode = cpuMemoryFetchInstruction(cpu->memory);
+
+        enum AddressingMode addressingMode = getAddressingMode__(opcode);
+
+        uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) =
+                getInstructionFunction__(opcode);
+
+        if(addressingMode != ADDRESSING_INVALID && instructionFunction != NULL)
+        {
+            for(i=0; i < ADRESSING_EXTRA_BYTES[addressingMode]; i++)
+                extraBytes[i] = cpuMemoryFetchInstruction(cpu->memory);
+
+            instructionClockTicks = instructionFunction(cpu->registers, cpu->memory, addressingMode, extraBytes);
+            realClockTicksToWait = (CLOCKS_PER_SEC / NES_CPU_CLOCKS_PER_SEC) * instructionClockTicks;
+
+            while ((clock() - realClockOnStart) < realClockTicksToWait);
+        }
+    }
+
+    return 0;
 }
 
 

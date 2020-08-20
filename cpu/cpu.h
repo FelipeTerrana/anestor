@@ -6,6 +6,8 @@
 #include "memory.h"
 #include "../cartridge.h"
 
+#define NES_CPU_CLOCKS_PER_SEC 1790
+
 typedef struct cpu__ Cpu;
 
 Cpu* cpuInit(/* TODO ponteiro pra PPU / APU */Cartridge* cartridge);
