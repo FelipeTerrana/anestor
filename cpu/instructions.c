@@ -1,9 +1,11 @@
 #include "instructions.h"
 
+#include <stdlib.h>
+
 #define CPU_RAM_STACK_START 0x0100
 
 struct cpu_registers__ {
-    uint8_t acc;
+    uint8_t a;
     uint8_t x, y;
     uint16_t pc;
     uint8_t s;
@@ -27,6 +29,26 @@ const uint8_t ADRESSING_EXTRA_BYTES[NUM_ADDRESSING_MODES] = {
 
         [ADDRESSING_INVALID] = -1
 };
+
+
+
+CpuRegisters* cpuRegistersInit()
+{
+    CpuRegisters* registers = malloc( sizeof(struct cpu_registers__) );
+
+    registers->p = 0x34;
+    registers->a = registers->x = registers->y = 0x00;
+    registers->s = 0xFD;
+
+    return registers;
+}
+
+
+
+void cpuRegistersShutdown(CpuRegisters* registers)
+{
+    free(registers);
+}
 
 
 

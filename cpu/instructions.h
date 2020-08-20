@@ -29,6 +29,9 @@ enum AddressingMode
 
 // TODO Support unofficial opcodes
 
+CpuRegisters* cpuRegistersInit();
+void cpuRegistersShutdown(CpuRegisters* registers);
+
 uint8_t adc(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t and(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t asl(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);

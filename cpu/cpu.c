@@ -220,37 +220,59 @@ static uint8_t (*getInstructionFunction__(uint8_t opcode)) (CpuRegisters*, CpuMe
 
 
 
-#include <stdio.h>
-void testDecoder(uint8_t opcode)
+Cpu* cpuInit(/* TODO ponteiro pra PPU / APU */Cartridge* cartridge)
 {
-    const char* ADDRESSING_MODE_NAME[] = {
-        [ADDRESSING_IMPLIED] = "ADDRESSING_IMPLIED",
-        [ADDRESSING_ACCUMULATOR] = "ADDRESSING_ACCUMULATOR",
-        [ADDRESSING_IMMEDIATE] = "ADDRESSING_IMMEDIATE",
-        [ADDRESSING_ZERO_PAGE] = "ADDRESSING_ZERO_PAGE",
-        [ADDRESSING_ZERO_PAGE_X] = "ADDRESSING_ZERO_PAGE_X",
-        [ADDRESSING_ZERO_PAGE_Y] = "ADDRESSING_ZERO_PAGE_Y",
-        [ADDRESSING_RELATIVE] = "ADDRESSING_RELATIVE",
-        [ADDRESSING_ABSOLUTE] = "ADDRESSING_ABSOLUTE",
-        [ADDRESSING_ABSOLUTE_X] = "ADDRESSING_ABSOLUTE_X",
-        [ADDRESSING_ABSOLUTE_Y] = "ADDRESSING_ABSOLUTE_Y",
-        [ADDRESSING_INDIRECT] = "ADDRESSING_INDIRECT",
-        [ADDRESSING_INDIRECT_X] = "ADDRESSING_INDIRECT_X",
-        [ADDRESSING_INDIRECT_Y] = "ADDRESSING_INDIRECT_Y",
+    Cpu* cpu = malloc( sizeof(struct cpu__) );
 
-        [ADDRESSING_INVALID] = "ADDRESSING_INVALID"
-    };
+    cpu->registers = cpuRegistersInit();
+    cpu->memory = cpuMemoryInit(/* TODO ponteiro pra PPU / APU */cartridge);
 
-    enum AddressingMode addressingMode = getAddressingMode__(opcode);
-
-    uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) =
-            getInstructionFunction__(opcode);
-
-    printf("Opcode 0x%02X\n", opcode);
-    printf("%s\n", ADDRESSING_MODE_NAME[addressingMode]);
-
-    if(instructionFunction != NULL)
-        instructionFunction(NULL, NULL, addressingMode, NULL);
-    else
-        printf("No instruction\n");
+    return cpu;
 }
+
+
+
+void cpuShutdown(Cpu* cpu)
+{
+    cpuRegistersShutdown(cpu->registers);
+    cpuMemoryShutdown(cpu->memory);
+
+    free(cpu);
+}
+
+
+
+//#include <stdio.h>
+//void testDecoder(uint8_t opcode)
+//{
+//    const char* ADDRESSING_MODE_NAME[] = {
+//        [ADDRESSING_IMPLIED] = "ADDRESSING_IMPLIED",
+//        [ADDRESSING_ACCUMULATOR] = "ADDRESSING_ACCUMULATOR",
+//        [ADDRESSING_IMMEDIATE] = "ADDRESSING_IMMEDIATE",
+//        [ADDRESSING_ZERO_PAGE] = "ADDRESSING_ZERO_PAGE",
+//        [ADDRESSING_ZERO_PAGE_X] = "ADDRESSING_ZERO_PAGE_X",
+//        [ADDRESSING_ZERO_PAGE_Y] = "ADDRESSING_ZERO_PAGE_Y",
+//        [ADDRESSING_RELATIVE] = "ADDRESSING_RELATIVE",
+//        [ADDRESSING_ABSOLUTE] = "ADDRESSING_ABSOLUTE",
+//        [ADDRESSING_ABSOLUTE_X] = "ADDRESSING_ABSOLUTE_X",
+//        [ADDRESSING_ABSOLUTE_Y] = "ADDRESSING_ABSOLUTE_Y",
+//        [ADDRESSING_INDIRECT] = "ADDRESSING_INDIRECT",
+//        [ADDRESSING_INDIRECT_X] = "ADDRESSING_INDIRECT_X",
+//        [ADDRESSING_INDIRECT_Y] = "ADDRESSING_INDIRECT_Y",
+//
+//        [ADDRESSING_INVALID] = "ADDRESSING_INVALID"
+//    };
+//
+//    enum AddressingMode addressingMode = getAddressingMode__(opcode);
+//
+//    uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) =
+//            getInstructionFunction__(opcode);
+//
+//    printf("Opcode 0x%02X\n", opcode);
+//    printf("%s\n", ADDRESSING_MODE_NAME[addressingMode]);
+//
+//    if(instructionFunction != NULL)
+//        instructionFunction(NULL, NULL, addressingMode, NULL);
+//    else
+//        printf("No instruction\n");
+//}

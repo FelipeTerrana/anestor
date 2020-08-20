@@ -1,6 +1,6 @@
 #include "memory.h"
 
-#include "../cartridge.h"
+#include <stdlib.h>
 
 #define CPU_RAM_SIZE 0x0800
 
@@ -17,3 +17,23 @@ struct cpu_memory__ {
     // TODO ponteiro pra APU
     Cartridge* cartridge;
 };
+
+
+
+CpuMemory* cpuMemoryInit(/* TODO ponteiro pra PPU / APU */Cartridge* cartridge)
+{
+    CpuMemory* memory = malloc( sizeof(struct cpu_memory__) );
+
+    // TODO ponteiro pra PPU
+    // TODO ponteiro pra APU
+    memory->cartridge = cartridge;
+
+    return memory;
+}
+
+
+
+void cpuMemoryShutdown(CpuMemory* memory)
+{
+    free(memory);
+}
