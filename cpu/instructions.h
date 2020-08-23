@@ -32,6 +32,11 @@ enum AddressingMode
 CpuRegisters* cpuRegistersInit();
 void cpuRegistersShutdown(CpuRegisters* registers);
 
+void decodeInstruction(uint8_t opcode,
+                       uint8_t (**instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*),
+                       enum AddressingMode* addressingMode,
+                       uint8_t* clockCycles);
+
 uint8_t adc(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t and(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t asl(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
