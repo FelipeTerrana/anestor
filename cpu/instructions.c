@@ -337,28 +337,66 @@ void cpuRegistersShutdown(CpuRegisters* registers)
 
 
 
-//static uint8_t getOperand(CpuRegisters* registers, CpuMemory* memory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-//{
-//    uint8_t operand;
-//    uint8_t addressZeroPage;
-//    uint16_t addressFull;
-//
-//    switch (addressingMode)
-//    {
-//        case ADDRESSING_IMMEDIATE:
-//            operand = *( (uint8_t*) extraBytes );
-//            break;
-//
-//        case ADDRESSING_ZERO_PAGE:
-//            addressZeroPage = *( (uint8_t*) extraBytes );
-//            operand = cpuMemoryRead(memory, addressZeroPage);
-//            break;
-//
-//        case ADDRESSING_ZERO_PAGE_X:
-//            addressZeroPage = *( (uint8_t*) extraBytes ) + registers->x;
-//            operand = cpuMemoryRead(memory, addressZeroPage);
-//    }
-//}
+static uint8_t getOperand__(CpuRegisters* registers, CpuMemory* memory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+    uint8_t operand;
+    uint8_t addressZeroPage;
+    uint16_t addressFull;
+
+    switch (addressingMode)
+    {
+        case ADDRESSING_IMMEDIATE:
+            operand = extraBytes[0];
+            break;
+
+        case ADDRESSING_ZERO_PAGE:
+            addressZeroPage = extraBytes[0];
+            operand = cpuMemoryRead(memory, addressZeroPage);
+            break;
+
+        case ADDRESSING_ZERO_PAGE_X:
+            addressZeroPage = extraBytes[0] + registers->x;
+            operand = cpuMemoryRead(memory, addressZeroPage);
+            break;
+
+        case ADDRESSING_ABSOLUTE:
+            addressFull = extraBytes[0] + (extraBytes[1] << 8u);
+            operand = cpuMemoryRead(memory, addressFull);
+            break;
+
+        case ADDRESSING_ABSOLUTE_X: // TODO check page crossing
+            addressFull = extraBytes[0] + (extraBytes[1] << 8u);
+            addressFull += registers->x;
+            operand = cpuMemoryRead(memory, addressFull);
+            break;
+
+        case ADDRESSING_ABSOLUTE_Y: // TODO check page crossing
+            addressFull = extraBytes[0] + (extraBytes[1] << 8u);
+            addressFull += registers->y;
+            operand = cpuMemoryRead(memory, addressFull);
+            break;
+
+        case ADDRESSING_INDIRECT_X:
+            addressZeroPage = extraBytes[0] + registers->x;
+            addressFull = cpuMemoryRead(memory, addressZeroPage);
+            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
+            operand = cpuMemoryRead(memory, addressFull);
+            break;
+
+        case ADDRESSING_INDIRECT_Y: // TODO check page crossing
+            addressZeroPage = extraBytes[0];
+            addressFull = cpuMemoryRead(memory, addressZeroPage);
+            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
+            addressFull += registers->y;
+            operand = cpuMemoryRead(memory, addressFull);
+            break;
+
+        default:
+            operand = 0;
+    }
+
+    return operand;
+}
 
 
 
@@ -366,22 +404,6 @@ void cpuRegistersShutdown(CpuRegisters* registers)
 uint8_t adc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("adc\n");
-//    uint8_t rightOperand;
-//
-//    switch (addressingMode)
-//    {
-//        case ADDRESSING_IMMEDIATE:
-//            rightOperand = *( (uint8_t*) extraBytes );
-//            break;
-//
-//        case ADDRESSING_ZERO_PAGE:
-//            rightOperand = cpuMemoryRead( cpuMemory, *( (uint8_t*) extraBytes ) );
-//            break;
-//
-//        case ADDRESSING_ZERO_PAGE_X:
-//            rightOperand = cpuMemoryRead( cpuMemory, *( (uint8_t*) extraBytes ) +  );
-//    }
-
     return 0;
 }
 
