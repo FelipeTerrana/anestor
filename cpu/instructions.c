@@ -289,68 +289,30 @@ static uint8_t (*INSTRUCTION_CC_AAA[0x4][0x8]) (CpuRegisters*, CpuMemory*, enum 
 
 
 
-static enum AddressingMode getAddressingMode__(uint8_t opcode)
-{
-    uint8_t bbb, cc;
-    enum AddressingMode addressing = ADDRESSING_EXCEPTIONS[opcode];
-
-    if(addressing != ADDRESSING_INVALID)
-        return addressing;
-
-    cc = opcode & 0x3u;
-    opcode >>= 2u;
-
-    bbb = opcode & 0x7u;
-
-    return ADDRESSING_CC_BBB[cc][bbb];
-}
-
-
-
-static uint8_t (*getInstructionFunction__(uint8_t opcode)) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*)
-{
-    uint8_t aaa, cc;
-    uint8_t (*instructionFunction) () = INSTRUCTION_EXCEPTIONS[opcode];
-
-    if(instructionFunction != NULL)
-        return instructionFunction;
-
-    cc = opcode & 0x3u;
-    opcode >>= 5u;
-
-    aaa = opcode & 0x7u;
-
-    return INSTRUCTION_CC_AAA[cc][aaa];
-}
-
-
-
-static uint8_t getClockTime__(uint8_t opcode)
-{
-    uint8_t bbb, cc;
-    uint8_t clockTime = CLOCK_TIME_EXCEPTIONS[opcode];
-
-    if(clockTime != 0)
-        return clockTime;
-
-    cc = opcode & 0x3u;
-    opcode >>= 2u;
-
-    bbb = opcode & 0x7u;
-
-    return CLOCK_TIME_CC_BBB[cc][bbb];
-}
-
-
-
 void decodeInstruction(uint8_t opcode,
                        uint8_t (**instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*),
                        enum AddressingMode* addressingMode,
                        uint8_t* clockCycles)
 {
-    *instructionFunction = getInstructionFunction__(opcode);
-    *addressingMode = getAddressingMode__(opcode);
-    *clockCycles = getClockTime__(opcode);
+
+    uint8_t aaa, bbb, cc;
+
+    cc = opcode & 0x3u;
+    bbb = (opcode & (0x7u << 2u)) >> 2u;
+    aaa = (opcode & (0x7u << 5u)) >> 5u;
+
+    *instructionFunction = INSTRUCTION_EXCEPTIONS[opcode];
+    *addressingMode = ADDRESSING_EXCEPTIONS[opcode];
+    *clockCycles = CLOCK_TIME_EXCEPTIONS[opcode];
+
+    if( *instructionFunction == NULL )
+        *instructionFunction = INSTRUCTION_CC_AAA[cc][aaa];
+
+    if(*addressingMode == ADDRESSING_INVALID)
+        *addressingMode = ADDRESSING_CC_BBB[cc][bbb];
+
+    if(*clockCycles == 0)
+        *clockCycles = CLOCK_TIME_CC_BBB[cc][bbb];
 }
 
 

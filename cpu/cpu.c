@@ -70,7 +70,7 @@ int cpuLoop(void* data)
         clock_t realClockTicksToWait, realClockOnStart = clock();
         uint8_t opcode = cpuMemoryFetchInstruction(cpu->memory);
 
-        uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+        uint8_t (*instructionFunction) ();
         enum AddressingMode addressingMode;
         uint8_t instructionClockTicks;
 
@@ -114,7 +114,7 @@ int cpuLoop(void* data)
 //        [ADDRESSING_INVALID] = "ADDRESSING_INVALID"
 //    };
 //
-//    uint8_t (*instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+//    uint8_t (*instructionFunction) ();
 //    enum AddressingMode addressingMode;
 //    uint8_t instructionClockTicks;
 //
