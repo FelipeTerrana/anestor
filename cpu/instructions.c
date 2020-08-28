@@ -1,8 +1,17 @@
 #include "instructions.h"
 
 #include <stdlib.h>
+#include "../flag_ops.h"
 
-#define CPU_RAM_STACK_START 0x0100
+#define CPU_RAM_STACK_START 0x0100u
+
+#define C_MASK 0x01u
+#define Z_MASK 0x02u
+#define I_MASK 0x04u
+#define D_MASK 0x08u
+#define B_MASK 0x30u
+#define V_MASK 0x40u
+#define N_MASK 0x80u
 
 struct cpu_registers__ {
     uint8_t a;
@@ -337,11 +346,17 @@ void cpuRegistersShutdown(CpuRegisters* registers)
 
 
 
-static uint8_t getOperand__(CpuRegisters* registers, CpuMemory* memory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+static uint8_t getOperand__(CpuRegisters* registers,
+                            CpuMemory* memory,
+                            enum AddressingMode addressingMode,
+                            uint8_t* extraBytes,
+                            uint8_t* extraCycles)
 {
     uint8_t operand;
     uint8_t addressZeroPage;
     uint16_t addressFull;
+
+    *extraCycles = 0;
 
     switch (addressingMode)
     {
@@ -401,10 +416,25 @@ static uint8_t getOperand__(CpuRegisters* registers, CpuMemory* memory, enum Add
 
 
 #include <stdio.h>
-uint8_t adc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint8_t adc(CpuRegisters* cpuRegisters,
+            CpuMemory* cpuMemory,
+            enum AddressingMode addressingMode,
+            uint8_t* extraBytes)
 {
-    printf("adc\n");
-    return 0;
+//    printf("ADC\n");
+    uint8_t extraCycles;
+    uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
+
+    uint16_t fullResult = cpuRegisters->a + operand + getFlagValue(cpuRegisters->p, C_MASK);
+    int8_t signedResult = fullResult;
+    cpuRegisters->a = fullResult;
+
+    setFlagValue(&cpuRegisters->p, C_MASK, fullResult != cpuRegisters->a ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, Z_MASK, cpuRegisters->a == 0 ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, V_MASK, signedResult != cpuRegisters->a ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, N_MASK, signedResult < 0 ? 1 : 0);
+
+    return extraCycles;
 }
 
 
