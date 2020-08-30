@@ -46,8 +46,15 @@ uint8_t ora(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t sbc(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t sta(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
-
 uint8_t asl(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+uint8_t dec(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+uint8_t inc(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+uint8_t ldx(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+uint8_t lsr(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+uint8_t rol(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+uint8_t ror(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+uint8_t stx(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
+
 
 uint8_t bcc(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t bcs(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
@@ -67,20 +74,16 @@ uint8_t clv(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t cpx(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t cpy(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
-uint8_t dec(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t dex(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t dey(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
-uint8_t inc(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t inx(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t iny(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
 uint8_t jmp(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t jsr(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
-uint8_t ldx(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t ldy(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
-uint8_t lsr(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
 uint8_t nop(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
@@ -89,15 +92,12 @@ uint8_t php(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t pla(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t plp(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
-uint8_t rol(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
-uint8_t ror(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t rti(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t rts(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
 uint8_t sec(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t sed(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t sei(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
-uint8_t stx(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint8_t sty(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
 uint8_t tax(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);

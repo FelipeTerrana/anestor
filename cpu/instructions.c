@@ -1,6 +1,7 @@
 #include "instructions.h"
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "../flag_ops.h"
 
 #define CPU_RAM_STACK_START 0x0100u
@@ -415,6 +416,72 @@ static uint8_t getOperand__(CpuRegisters* registers,
 
 
 
+static bool storeByte(uint8_t byte,
+                      CpuRegisters* registers,
+                      CpuMemory* memory,
+                      enum AddressingMode addressingMode,
+                      uint8_t* extraBytes,
+                      uint8_t* extraCycles)
+{
+    uint8_t addressZeroPage;
+    uint16_t addressFull;
+    bool success;
+
+    *extraCycles = 0;
+
+    switch (addressingMode)
+    {
+        case ADDRESSING_ZERO_PAGE:
+            addressZeroPage = extraBytes[0];
+            success = cpuMemoryWrite(memory, addressZeroPage, byte);
+            break;
+
+        case ADDRESSING_ZERO_PAGE_X:
+            addressZeroPage = extraBytes[0] + registers->x;
+            success = cpuMemoryWrite(memory, addressZeroPage, byte);
+            break;
+
+        case ADDRESSING_ABSOLUTE:
+            addressFull = extraBytes[0] + (extraBytes[1] << 8u);
+            success = cpuMemoryWrite(memory, addressFull, byte);
+            break;
+
+        case ADDRESSING_ABSOLUTE_X: // TODO check page crossing
+            addressFull = extraBytes[0] + (extraBytes[1] << 8u);
+            addressFull += registers->x;
+            success = cpuMemoryWrite(memory, addressFull, byte);
+            break;
+
+        case ADDRESSING_ABSOLUTE_Y: // TODO check page crossing
+            addressFull = extraBytes[0] + (extraBytes[1] << 8u);
+            addressFull += registers->y;
+            success = cpuMemoryWrite(memory, addressFull, byte);
+            break;
+
+        case ADDRESSING_INDIRECT_X:
+            addressZeroPage = extraBytes[0] + registers->x;
+            addressFull = cpuMemoryRead(memory, addressZeroPage);
+            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
+            success = cpuMemoryWrite(memory, addressFull, byte);
+            break;
+
+        case ADDRESSING_INDIRECT_Y: // TODO check page crossing
+            addressZeroPage = extraBytes[0];
+            addressFull = cpuMemoryRead(memory, addressZeroPage);
+            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
+            addressFull += registers->y;
+            success = cpuMemoryWrite(memory, addressFull, byte);
+            break;
+
+        default:
+            success = false;
+    }
+
+    return success;
+}
+
+
+
 #include <stdio.h>
 uint8_t adc(CpuRegisters* cpuRegisters,
             CpuMemory* cpuMemory,
@@ -532,6 +599,17 @@ uint8_t sbc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
     setFlagValue(&cpuRegisters->p, Z_MASK, cpuRegisters->a == 0 ? 1 : 0);
     setFlagValue(&cpuRegisters->p, V_MASK, fullSignedResult != cpuRegisters->a ? 1 : 0);
     setFlagValue(&cpuRegisters->p, N_MASK, fullSignedResult < 0 ? 1 : 0);
+
+    return extraCycles;
+}
+
+
+
+uint8_t sta(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("STA\n");
+    uint8_t extraCycles;
+    storeByte(cpuRegisters->a, cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     return extraCycles;
 }
@@ -856,14 +934,6 @@ uint8_t sed(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 uint8_t sei(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("sei\n");
-    return 0;
-}
-
-
-
-uint8_t sta(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("sta\n");
     return 0;
 }
 
