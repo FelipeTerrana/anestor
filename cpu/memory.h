@@ -4,10 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../cartridge.h"
+#include "apu/apu.h"
 
 typedef struct cpu_memory__ CpuMemory;
 
-CpuMemory* cpuMemoryInit(/* TODO ponteiro pra PPU / APU */Cartridge* cartridge);
+CpuMemory* cpuMemoryInit(/* TODO ponteiro pra PPU */Apu* apu, Cartridge* cartridge);
 void cpuMemoryShutdown(CpuMemory* memory);
 
 uint8_t cpuMemoryRead(CpuMemory* memory, uint16_t address);

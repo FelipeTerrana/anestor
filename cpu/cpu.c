@@ -6,6 +6,7 @@
 #include "instructions.h"
 
 struct cpu__ {
+    Apu* apu;
     CpuRegisters* registers;
     CpuMemory* memory;
 };
@@ -34,12 +35,13 @@ const uint8_t ADRESSING_EXTRA_BYTES[NUM_ADDRESSING_MODES] = {
 
 
 
-Cpu* cpuInit(/* TODO ponteiro pra PPU / APU */Cartridge* cartridge)
+Cpu* cpuInit(/* TODO ponteiro pra PPU */Cartridge* cartridge)
 {
     Cpu* cpu = malloc( sizeof(struct cpu__) );
 
+    cpu->apu = apuInit();
     cpu->registers = cpuRegistersInit();
-    cpu->memory = cpuMemoryInit(/* TODO ponteiro pra PPU / APU */cartridge);
+    cpu->memory = cpuMemoryInit(/* TODO ponteiro pra PPU */cpu->apu, cartridge);
 
     return cpu;
 }
@@ -48,6 +50,7 @@ Cpu* cpuInit(/* TODO ponteiro pra PPU / APU */Cartridge* cartridge)
 
 void cpuShutdown(Cpu* cpu)
 {
+    apuShutdown(cpu->apu);
     cpuRegistersShutdown(cpu->registers);
     cpuMemoryShutdown(cpu->memory);
 
