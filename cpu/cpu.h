@@ -6,12 +6,13 @@
 #include "memory.h"
 #include "../cartridge.h"
 #include "apu/apu.h"
+#include "../ppu/memory.h"
 
 #define NES_CPU_CLOCKS_PER_SEC 1790
 
 typedef struct cpu__ Cpu;
 
-Cpu* cpuInit(/* TODO ponteiro pra PPU */Cartridge* cartridge);
+Cpu* cpuInit(PpuMemory* ppuMemory, Cartridge* cartridge);
 void cpuShutdown(Cpu* cpu);
 
 int cpuLoop(void* stopSignal);

@@ -35,13 +35,13 @@ const uint8_t ADRESSING_EXTRA_BYTES[NUM_ADDRESSING_MODES] = {
 
 
 
-Cpu* cpuInit(/* TODO ponteiro pra PPU */Cartridge* cartridge)
+Cpu* cpuInit(PpuMemory* ppuMemory, Cartridge* cartridge)
 {
     Cpu* cpu = malloc( sizeof(struct cpu__) );
 
     cpu->apu = apuInit();
     cpu->registers = cpuRegistersInit();
-    cpu->memory = cpuMemoryInit(/* TODO ponteiro pra PPU */cpu->apu, cartridge);
+    cpu->memory = cpuMemoryInit(ppuMemory, cpu->apu, cartridge);
 
     return cpu;
 }

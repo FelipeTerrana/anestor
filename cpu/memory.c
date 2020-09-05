@@ -14,18 +14,18 @@
 struct cpu_memory__ {
     uint8_t ram[CPU_RAM_SIZE];
     uint16_t pc;
-    // TODO ponteiro pra PPU
+    PpuMemory* ppuMemory;
     Apu* apu;
     Cartridge* cartridge;
 };
 
 
 
-CpuMemory* cpuMemoryInit(/* TODO ponteiro pra PPU */Apu* apu, Cartridge* cartridge)
+CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Apu* apu, Cartridge* cartridge)
 {
     CpuMemory* memory = malloc( sizeof(struct cpu_memory__) );
 
-    // TODO ponteiro pra PPU
+    memory->ppuMemory = ppuMemory;
     memory->apu = apu;
     memory->cartridge = cartridge;
 
