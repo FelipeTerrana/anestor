@@ -7,17 +7,15 @@
 static const MapperFunctions NROM = {
         nromInsert,
         nromRemove,
-        nromPrgRead,
-        nromPrgWrite,
-        nromChrRead,
-        nromChrWrite
+        nromRead,
+        nromWrite,
 };
 
 
 
 static const MapperFunctions MAPPER_ARRAY[MAPPER_ARRAY_SIZE] = {
         [0] = NROM,
-        [MAPPER_ARRAY_SIZE - 1] = {NULL, NULL, NULL, NULL, NULL, NULL}
+        [MAPPER_ARRAY_SIZE - 1] = {NULL, NULL, NULL, NULL}
 };
 
 

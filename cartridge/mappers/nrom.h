@@ -11,10 +11,7 @@ typedef struct nrom__ Nrom;
 void* nromInsert(const CartridgeHeader* header, FILE* romFile);
 void nromRemove(void* mapper);
 
-uint8_t nromPrgRead(void* mapper, uint16_t address);
-bool nromPrgWrite(void* mapper, uint16_t address, uint8_t value);
-
-uint8_t nromChrRead(void* mapper, uint16_t address);
-bool nromChrWrite(void* mapper, uint16_t address, uint8_t value);
+uint8_t nromRead(void* mapper, uint16_t address);
+bool nromWrite(void* mapper, uint16_t address, uint8_t value);
 
 #endif //ANESTOR_NROM_H

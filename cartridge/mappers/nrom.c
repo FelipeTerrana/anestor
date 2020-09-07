@@ -72,7 +72,7 @@ void nromRemove(void* mapper)
 
 
 
-uint8_t nromPrgRead(void* mapper, uint16_t address)
+uint8_t nromRead(void* mapper, uint16_t address)
 {
     // TODO
     return 0x0;
@@ -80,23 +80,7 @@ uint8_t nromPrgRead(void* mapper, uint16_t address)
 
 
 
-bool nromPrgWrite(void* mapper, uint16_t address, uint8_t value)
-{
-    // TODO
-    return false;
-}
-
-
-
-uint8_t nromChrRead(void* mapper, uint16_t address)
-{
-    // TODO
-    return 0;
-}
-
-
-
-bool nromChrWrite(void* mapper, uint16_t address, uint8_t value)
+bool nromWrite(void* mapper, uint16_t address, uint8_t value)
 {
     // TODO
     return false;

@@ -35,8 +35,7 @@ Cartridge* cartridgeInsert(const char* filename)
     getMapperFunctions(&cartridge->mapperFunctions, cartridgeHeaderGetMapper(cartridge->header));
 
     if(cartridge->mapperFunctions.insert == NULL || cartridge->mapperFunctions.remove == NULL ||
-       cartridge->mapperFunctions.prgRead == NULL || cartridge->mapperFunctions.prgWrite == NULL ||
-       cartridge->mapperFunctions.chrRead == NULL || cartridge->mapperFunctions.chrWrite == NULL)
+       cartridge->mapperFunctions.read == NULL || cartridge->mapperFunctions.write == NULL)
     {
         printf("Mapper %03d not supported\n", cartridgeHeaderGetMapper(cartridge->header));
         free(cartridge);
@@ -69,4 +68,18 @@ void cartridgeRemove(Cartridge* cartridge)
 
         free(cartridge);
     }
+}
+
+
+
+uint8_t cartridgeRead(Cartridge* cartridge, uint16_t address)
+{
+    return cartridge->mapperFunctions.read(cartridge->mapper, address);
+}
+
+
+
+bool cartridgeWrite(Cartridge* cartridge, uint16_t address, uint8_t value)
+{
+    return cartridge->mapperFunctions.write(cartridge->mapper, address, value);
 }
