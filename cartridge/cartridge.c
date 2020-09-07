@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "flag_ops.h"
+#include "../flag_ops.h"
 
 #define CARTRIDGE_TRAINER_MAX_SIZE 512
 #define CARTRIDGE_PRG_ROM_STEP 16384

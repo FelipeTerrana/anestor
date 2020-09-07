@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "../cartridge.h"
+#include "../cartridge/cartridge.h"
 #include "apu/apu.h"
 #include "../ppu/memory.h"
 

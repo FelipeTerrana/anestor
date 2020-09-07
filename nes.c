@@ -1,7 +1,7 @@
 #include "nes.h"
 
 #include <stdlib.h>
-#include "cartridge.h"
+#include "cartridge/cartridge.h"
 #include "cpu/cpu.h"
 #include "ppu/ppu.h"
 

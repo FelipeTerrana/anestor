@@ -1,0 +1,4 @@
+#ifndef ANESTOR_NROM_H
+#define ANESTOR_NROM_H
+
+#endif //ANESTOR_NROM_H

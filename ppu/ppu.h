@@ -1,7 +1,7 @@
 #ifndef ANESTOR_PPU_H
 #define ANESTOR_PPU_H
 
-#include "../cartridge.h"
+#include "../cartridge/cartridge.h"
 #include "memory.h"
 
 typedef struct ppu__ Ppu;

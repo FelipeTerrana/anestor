@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "../cartridge.h"
+#include "../cartridge/cartridge.h"
 
 typedef struct ppu_memory__ PpuMemory;
 

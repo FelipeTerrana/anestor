@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "instructions.h"
 #include "memory.h"
-#include "../cartridge.h"
+#include "../cartridge/cartridge.h"
 #include "apu/apu.h"
 #include "../ppu/memory.h"
 
