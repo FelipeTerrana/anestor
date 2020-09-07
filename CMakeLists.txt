@@ -3,7 +3,7 @@ project(anestor)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(anestor main.c cartridge/cartridge.c cartridge/cartridge.h cpu/cpu.c cpu/cpu.h cpu/instructions.c cpu/instructions.h cpu/memory.c cpu/memory.h flag_ops.c flag_ops.h nes.c nes.h cpu/apu/apu.c cpu/apu/apu.h ppu/memory.c ppu/memory.h ppu/ppu.c ppu/ppu.h cartridge/mappers/nrom.c cartridge/mappers/nrom.h)
+add_executable(anestor main.c cartridge/cartridge.c cartridge/cartridge.h cpu/cpu.c cpu/cpu.h cpu/instructions.c cpu/instructions.h cpu/memory.c cpu/memory.h flag_ops.c flag_ops.h nes.c nes.h cpu/apu/apu.c cpu/apu/apu.h ppu/memory.c ppu/memory.h ppu/ppu.c ppu/ppu.h cartridge/mappers/nrom.c cartridge/mappers/nrom.h cartridge/header.c cartridge/header.h)
 
 include(FindPkgConfig)
 pkg_search_module(SDL2 REQUIRED sdl2)
