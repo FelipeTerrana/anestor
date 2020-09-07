@@ -62,7 +62,7 @@ void cartridgeHeaderRemove(CartridgeHeader* header)
 
 
 
-uint8_t cartridgeHeaderGetMapper(const CartridgeHeader* header)
+uint16_t cartridgeHeaderGetMapper(const CartridgeHeader* header)
 {
     return getFlagValue(header->flags6, CARTRIDGE_MAPPER_NUMBER_MASK) |
            (getFlagValue(header->flags7, CARTRIDGE_MAPPER_NUMBER_MASK) << 8u);

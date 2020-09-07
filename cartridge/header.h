@@ -16,7 +16,7 @@ typedef struct cartridge_header__ CartridgeHeader;
 CartridgeHeader* cartridgeHeaderInsert(FILE* romFile);
 void cartridgeHeaderRemove(CartridgeHeader* header);
 
-uint8_t cartridgeHeaderGetMapper(const CartridgeHeader* header);
+uint16_t cartridgeHeaderGetMapper(const CartridgeHeader* header);
 size_t cartridgeHeaderGetPrgRomSize(const CartridgeHeader* header);
 size_t cartridgeHeaderGetChrRomSize(const CartridgeHeader* header);
 bool cartridgeHeaderContainsTrainer(const CartridgeHeader* header);
