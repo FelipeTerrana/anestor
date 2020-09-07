@@ -2,14 +2,19 @@
 
 #include <stdlib.h>
 
-#define CPU_RAM_SIZE 0x0800
+#define CPU_RAM_SIZE 2048
 
-#define PPU_REGISTERS_START 0x2000
-#define PPU_REGISTERS_SIZE 0x0008
+#define CPU_RAM_FIRST_ADDRESS 0x0000
+#define CPU_RAM_LAST_ADDRESS  0x1FFF
 
-#define APU_IO_REGISTERS_START 0x4000
-#define APU_IO_TEST_REGISTERS_START 0x4018
-#define CPU_CARTRIDGE_SPACE_START 0x4020
+#define PPU_REGISTERS_FIRST_ADDRESS 0x2000
+#define PPU_REGISTERS_LAST_ADDRESS  0x3FFF
+
+#define RP2A03_REGISTERS_FIRST_ADDRESS 0x4000
+#define RP2A03_REGISTERS_LAST_ADDRESS  0x401F
+
+#define CARTRIDGE_SPACE_FIRST_ADDRESS 0x4020
+#define CARTRIDGE_SPACE_LAST_ADDRESS  0xFFFF
 
 struct cpu_memory__ {
     uint8_t ram[CPU_RAM_SIZE];
@@ -43,16 +48,43 @@ void cpuMemoryShutdown(CpuMemory* memory)
 
 uint8_t cpuMemoryRead(CpuMemory* memory, uint16_t address)
 {
-    // TODO cpuMemoryRead
-    return 0x0;
+    if(address >= CPU_RAM_FIRST_ADDRESS && address <= CPU_RAM_LAST_ADDRESS)
+        return memory->ram[address % CPU_RAM_SIZE];
+
+    else if(address >= PPU_REGISTERS_FIRST_ADDRESS && address <= PPU_REGISTERS_LAST_ADDRESS)
+        return ppuRegistersRead(memory->ppuMemory, PPU_REGISTERS_FIRST_ADDRESS + address % 8);
+
+    else if(address >= RP2A03_REGISTERS_FIRST_ADDRESS && address <= RP2A03_REGISTERS_LAST_ADDRESS)
+        return 0x0; // TODO implement 2A03 registers read
+
+    else if(address >= CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CARTRIDGE_SPACE_LAST_ADDRESS)
+        return cartridgeRead(memory->cartridge, address);
+
+    else
+        return 0x0;
 }
 
 
 
 bool cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
 {
-    // TODO cpuMemoryWrite
-    return false;
+    if(address >= CPU_RAM_FIRST_ADDRESS && address <= CPU_RAM_LAST_ADDRESS)
+    {
+        memory->ram[address % CPU_RAM_SIZE] = value;
+        return true;
+    }
+
+    else if(address >= PPU_REGISTERS_FIRST_ADDRESS && address <= PPU_REGISTERS_LAST_ADDRESS)
+        return ppuRegistersWrite(memory->ppuMemory, PPU_REGISTERS_FIRST_ADDRESS + address % 8, value);
+
+    else if(address >= RP2A03_REGISTERS_FIRST_ADDRESS && address <= RP2A03_REGISTERS_LAST_ADDRESS)
+        return false; // TODO implement 2A03 registers read
+
+    else if(address >= CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CARTRIDGE_SPACE_LAST_ADDRESS)
+        return cartridgeWrite(memory->cartridge, address, value);
+
+    else
+        return false;
 }
 
 
