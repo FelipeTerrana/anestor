@@ -2,6 +2,7 @@
 #define ANESTOR_PPU_MEMORY_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "../cartridge.h"
 
 typedef struct ppu_memory__ PpuMemory;

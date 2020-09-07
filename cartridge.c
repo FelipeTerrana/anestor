@@ -51,6 +51,14 @@ struct cartridge__ {
 
 
 
+static uint8_t cartridgeGetMapper__(Cartridge* cartridge)
+{
+    return getFlagValue(cartridge->header.flags6, CARTRIDGE_MAPPER_NUMBER_MASK) |
+           (getFlagValue(cartridge->header.flags7, CARTRIDGE_MAPPER_NUMBER_MASK) << 8u);
+}
+
+
+
 Cartridge* cartridgeInsert(const char* filename)
 {
     FILE* romFile = fopen(filename, "r");
@@ -116,10 +124,10 @@ Cartridge* cartridgeInsert(const char* filename)
     fgets(cartridge->title, CARTRIDGE_TITLE_SIZE + 1, romFile);
     fclose(romFile);
 
-    if( strlen(cartridge->title) > 0 )
-        printf("%s loaded successfully!\n", cartridge->title);
-    else
-        printf("ROM loaded successfully, no title!\n");
+    printf("%s loaded successfully (%s, mapper %03d)\n",
+           filename,
+           strlen(cartridge->title) > 0 ? cartridge->title : "No title",
+           cartridgeGetMapper__(cartridge));
 
     return cartridge;
 }
