@@ -2,7 +2,13 @@
 
 #include <stdlib.h>
 
+#define CHR_SPACE_FIRST_ADDRESS 0x0000
+#define CHR_SPACE_LAST_ADDRESS  0x1FFF
+
+#define PRG_SPACE_FIRST_ADDRESS 0x8000
+
 struct nrom__ {
+    const CartridgeHeader* header;
     uint8_t* trainer;
     uint8_t* prgRom;
     uint8_t* chrRom;
@@ -11,13 +17,20 @@ struct nrom__ {
 
 void* nromInsert(const CartridgeHeader* header, FILE* romFile)
 {
+    if( cartridgeHeaderGetPrgRomSize(header) == 0 || cartridgeHeaderGetChrRomSize(header) == 0 )
+    {
+        printf("PRG ROM or CHR ROM empty\n");
+        return NULL;
+    }
+
     Nrom* nrom = malloc( sizeof(struct nrom__) );
     size_t itemsRead;
 
-    nrom->prgRom = malloc( cartridgeHeaderGetPrgRomSize(header) );
-    nrom->chrRom = malloc( cartridgeHeaderGetChrRomSize(header) );
+    nrom->header = header;
+    nrom->prgRom = malloc( cartridgeHeaderGetPrgRomSize(nrom->header) );
+    nrom->chrRom = malloc( cartridgeHeaderGetChrRomSize(nrom->header) );
 
-    if( cartridgeHeaderContainsTrainer(header) )
+    if( cartridgeHeaderContainsTrainer(nrom->header) )
     {
         nrom->trainer = malloc(CARTRIDGE_TRAINER_MAX_SIZE);
 
@@ -33,20 +46,20 @@ void* nromInsert(const CartridgeHeader* header, FILE* romFile)
     else
         nrom->trainer = NULL;
 
-    itemsRead = fread(nrom->prgRom, 1, cartridgeHeaderGetPrgRomSize(header), romFile);
+    itemsRead = fread(nrom->prgRom, 1, cartridgeHeaderGetPrgRomSize(nrom->header), romFile);
 
-    if(itemsRead != cartridgeHeaderGetPrgRomSize(header))
+    if(itemsRead != cartridgeHeaderGetPrgRomSize(nrom->header))
     {
-        printf("PRG ROM bytes expected: 0x%04zX, received 0x%04zX\n", cartridgeHeaderGetPrgRomSize(header), itemsRead);
+        printf("PRG ROM bytes expected: 0x%04zX, received 0x%04zX\n", cartridgeHeaderGetPrgRomSize(nrom->header), itemsRead);
         nromRemove(nrom);
         return NULL;
     }
 
-    itemsRead = fread(nrom->chrRom, 1, cartridgeHeaderGetChrRomSize(header), romFile);
+    itemsRead = fread(nrom->chrRom, 1, cartridgeHeaderGetChrRomSize(nrom->header), romFile);
 
-    if(itemsRead != cartridgeHeaderGetChrRomSize(header))
+    if(itemsRead != cartridgeHeaderGetChrRomSize(nrom->header))
     {
-        printf("CHR ROM bytes expected: 0x%04zX, received 0x%04zX\n", cartridgeHeaderGetChrRomSize(header), itemsRead);
+        printf("CHR ROM bytes expected: 0x%04zX, received 0x%04zX\n", cartridgeHeaderGetChrRomSize(nrom->header), itemsRead);
         nromRemove(nrom);
         return NULL;
     }
@@ -74,14 +87,22 @@ void nromRemove(void* mapper)
 
 uint8_t nromRead(void* mapper, uint16_t address)
 {
-    // TODO
-    return 0x0;
+    Nrom* nrom = mapper;
+
+    if(address >= CHR_SPACE_FIRST_ADDRESS && address <= CHR_SPACE_LAST_ADDRESS)
+        return nrom->chrRom[address % cartridgeHeaderGetChrRomSize(nrom->header)];
+
+    else if(address >= PRG_SPACE_FIRST_ADDRESS)
+        return nrom->prgRom[address % cartridgeHeaderGetPrgRomSize(nrom->header)];
+
+    else
+        return 0x0;
 }
 
 
 
 bool nromWrite(void* mapper, uint16_t address, uint8_t value)
 {
-    // TODO
+    // NROM (except for Family BASIC) doesn't have writable RAM
     return false;
 }
