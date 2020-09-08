@@ -32,7 +32,6 @@ struct ppu_memory__ {
     uint8_t ppuscrollX;
     uint8_t ppuscrollY;
     uint16_t ppuaddr;
-    uint8_t oamdma;
 
     uint8_t addressLatch;
 };
@@ -153,4 +152,11 @@ bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value)
 
     memory->addressLatch = ~((uint8_t) 0);
     return written;
+}
+
+
+
+void ppuMemoryOamWrite(PpuMemory* memory, uint8_t oamAddress, uint8_t value)
+{
+    memory->oam[oamAddress] = value;
 }

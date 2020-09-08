@@ -16,6 +16,8 @@
 #define CARTRIDGE_SPACE_FIRST_ADDRESS 0x4020
 #define CARTRIDGE_SPACE_LAST_ADDRESS  0xFFFF
 
+#define OAMDMA_ADDRESS 0x4014
+
 struct cpu_memory__ {
     uint8_t ram[CPU_RAM_SIZE];
     uint16_t pc;
@@ -77,8 +79,21 @@ bool cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
     else if(address >= PPU_REGISTERS_FIRST_ADDRESS && address <= PPU_REGISTERS_LAST_ADDRESS)
         return ppuRegistersWrite(memory->ppuMemory, PPU_REGISTERS_FIRST_ADDRESS + address % 8, value);
 
+    else if(address == OAMDMA_ADDRESS)
+    {
+        uint16_t oamAddress;
+        uint8_t oamValue;
+        for (oamAddress = 0; oamAddress < 0x100; oamAddress++)
+        {
+            oamValue = cpuMemoryRead(memory, (value << 8u) | oamAddress);
+            ppuMemoryOamWrite(memory->ppuMemory, oamAddress, oamValue);
+        }
+
+        return true;
+    }
+
     else if(address >= RP2A03_REGISTERS_FIRST_ADDRESS && address <= RP2A03_REGISTERS_LAST_ADDRESS)
-        return false; // TODO implement 2A03 registers read
+        return false; // TODO implement 2A03 registers write
 
     else if(address >= CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CARTRIDGE_SPACE_LAST_ADDRESS)
         return cartridgeWrite(memory->cartridge, address, value);
