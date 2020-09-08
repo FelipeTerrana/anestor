@@ -112,7 +112,7 @@ static const enum AddressingMode ADDRESSING_CC_BBB[0x4][0x8] = {
 
 
 
-static const uint8_t CLOCK_TIME_EXCEPTIONS[0x100] = {
+static const uint16_t CLOCK_TIME_EXCEPTIONS[0x100] = {
         [0x96] = 4,
         [0xB6] = 4,
         [0xBE] = 4,
@@ -172,7 +172,7 @@ static const uint8_t CLOCK_TIME_EXCEPTIONS[0x100] = {
         [0xFF] = 0
 };
 
-static const uint8_t CLOCK_TIME_CC_BBB[0x4][0x8] = {
+static const uint16_t CLOCK_TIME_CC_BBB[0x4][0x8] = {
         [0x1] = {
                 [0x0] = 6,
                 [0x1] = 3,
@@ -211,7 +211,7 @@ static const uint8_t CLOCK_TIME_CC_BBB[0x4][0x8] = {
 
 
 
-static uint8_t (*INSTRUCTION_EXCEPTIONS[0x100]) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = {
+static uint16_t (*INSTRUCTION_EXCEPTIONS[0x100]) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = {
         [0x96] = stx,
         [0xB6] = ldx,
         [0xBE] = ldx,
@@ -261,7 +261,7 @@ static uint8_t (*INSTRUCTION_EXCEPTIONS[0x100]) (CpuRegisters*, CpuMemory*, enum
         [0xFF] = NULL
 };
 
-static uint8_t (*INSTRUCTION_CC_AAA[0x4][0x8]) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = {
+static uint16_t (*INSTRUCTION_CC_AAA[0x4][0x8]) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*) = {
         [0x1] = {
                 [0x0] = ora,
                 [0x1] = and,
@@ -300,9 +300,9 @@ static uint8_t (*INSTRUCTION_CC_AAA[0x4][0x8]) (CpuRegisters*, CpuMemory*, enum 
 
 
 void decodeInstruction(uint8_t opcode,
-                       uint8_t (**instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*),
+                       uint16_t (**instructionFunction) (CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*),
                        enum AddressingMode* addressingMode,
-                       uint8_t* clockCycles)
+                       uint16_t* clockCycles)
 {
 
     uint8_t aaa, bbb, cc;
@@ -351,14 +351,17 @@ static uint8_t getOperand__(CpuRegisters* registers,
                             CpuMemory* memory,
                             enum AddressingMode addressingMode,
                             uint8_t* extraBytes,
-                            uint8_t* extraCycles)
+                            uint16_t* extraCycles)
 {
     uint8_t operand;
-    uint8_t addressZeroPage;
+    uint8_t addressZeroPage, addressLowerByte, addressUpperByte;
     uint16_t addressFull;
 
-    if(extraCycles != NULL)
-        *extraCycles = 0;
+    uint16_t dummy;
+    if(extraCycles == NULL)
+        extraCycles = &dummy;
+
+    *extraCycles = 0;
 
     switch (addressingMode)
     {
@@ -372,44 +375,47 @@ static uint8_t getOperand__(CpuRegisters* registers,
 
         case ADDRESSING_ZERO_PAGE:
             addressZeroPage = extraBytes[0];
-            operand = cpuMemoryRead(memory, addressZeroPage);
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &operand);
             break;
 
         case ADDRESSING_ZERO_PAGE_X:
             addressZeroPage = extraBytes[0] + registers->x;
-            operand = cpuMemoryRead(memory, addressZeroPage);
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &operand);
             break;
 
         case ADDRESSING_ABSOLUTE:
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
-            operand = cpuMemoryRead(memory, addressFull);
+            *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
         case ADDRESSING_ABSOLUTE_X: // TODO check page crossing
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
             addressFull += registers->x;
-            operand = cpuMemoryRead(memory, addressFull);
+            *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
         case ADDRESSING_ABSOLUTE_Y: // TODO check page crossing
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
             addressFull += registers->y;
-            operand = cpuMemoryRead(memory, addressFull);
+            *extraCycles = cpuMemoryRead(memory, addressFull, &operand);
             break;
 
         case ADDRESSING_INDIRECT_X:
             addressZeroPage = extraBytes[0] + registers->x;
-            addressFull = cpuMemoryRead(memory, addressZeroPage);
-            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
-            operand = cpuMemoryRead(memory, addressFull);
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressLowerByte);
+            addressZeroPage++;
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressUpperByte);
+            addressFull = addressLowerByte | (addressUpperByte << 8u);
+            *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
         case ADDRESSING_INDIRECT_Y: // TODO check page crossing
             addressZeroPage = extraBytes[0];
-            addressFull = cpuMemoryRead(memory, addressZeroPage);
-            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
-            addressFull += registers->y;
-            operand = cpuMemoryRead(memory, addressFull);
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressLowerByte);
+            addressZeroPage++;
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressUpperByte);
+            addressFull = (addressLowerByte | (addressUpperByte << 8u)) + registers->y;
+            *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
         default:
@@ -421,86 +427,85 @@ static uint8_t getOperand__(CpuRegisters* registers,
 
 
 
-static bool storeByte__(uint8_t byte,
+static void storeByte__(uint8_t byte,
                         CpuRegisters* registers,
                         CpuMemory* memory,
                         enum AddressingMode addressingMode,
                         uint8_t* extraBytes,
-                        uint8_t* extraCycles)
+                        uint16_t* extraCycles)
 {
-    uint8_t addressZeroPage;
+    uint8_t addressZeroPage, addressLowerByte, addressUpperByte;
     uint16_t addressFull;
-    bool success;
 
-    if(extraCycles != NULL)
-        *extraCycles = 0;
+    uint16_t dummy;
+    if(extraCycles == NULL)
+        extraCycles = &dummy;
+
+    *extraCycles = 0;
 
     switch (addressingMode)
     {
         case ADDRESSING_ACCUMULATOR:
             registers->a = byte;
-            success = true;
             break;
 
         case ADDRESSING_ZERO_PAGE:
             addressZeroPage = extraBytes[0];
-            success = cpuMemoryWrite(memory, addressZeroPage, byte);
+            *extraCycles += cpuMemoryWrite(memory, addressZeroPage, byte);
             break;
 
         case ADDRESSING_ZERO_PAGE_X:
             addressZeroPage = extraBytes[0] + registers->x;
-            success = cpuMemoryWrite(memory, addressZeroPage, byte);
+            *extraCycles += cpuMemoryWrite(memory, addressZeroPage, byte);
             break;
 
         case ADDRESSING_ABSOLUTE:
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
-            success = cpuMemoryWrite(memory, addressFull, byte);
+            *extraCycles += cpuMemoryWrite(memory, addressFull, byte);
             break;
 
         case ADDRESSING_ABSOLUTE_X: // TODO check page crossing
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
             addressFull += registers->x;
-            success = cpuMemoryWrite(memory, addressFull, byte);
+            *extraCycles += cpuMemoryWrite(memory, addressFull, byte);
             break;
 
         case ADDRESSING_ABSOLUTE_Y: // TODO check page crossing
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
             addressFull += registers->y;
-            success = cpuMemoryWrite(memory, addressFull, byte);
+            *extraCycles += cpuMemoryWrite(memory, addressFull, byte);
             break;
 
         case ADDRESSING_INDIRECT_X:
             addressZeroPage = extraBytes[0] + registers->x;
-            addressFull = cpuMemoryRead(memory, addressZeroPage);
-            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
-            success = cpuMemoryWrite(memory, addressFull, byte);
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressLowerByte);
+            addressZeroPage++;
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressUpperByte);
+            addressFull = addressLowerByte | (addressUpperByte << 8u);
+            *extraCycles += cpuMemoryWrite(memory, addressFull, byte);
             break;
 
         case ADDRESSING_INDIRECT_Y: // TODO check page crossing
             addressZeroPage = extraBytes[0];
-            addressFull = cpuMemoryRead(memory, addressZeroPage);
-            addressFull += cpuMemoryRead(memory, addressZeroPage + 1) << 8u;
-            addressFull += registers->y;
-            success = cpuMemoryWrite(memory, addressFull, byte);
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressLowerByte);
+            addressZeroPage++;
+            *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressUpperByte);
+            addressFull = (addressLowerByte | (addressUpperByte << 8u)) + registers->y;
+            *extraCycles += cpuMemoryWrite(memory, addressFull, byte);
             break;
-
-        default:
-            success = false;
     }
-
-    return success;
 }
 
 
 
 #include <stdio.h>
-uint8_t adc(CpuRegisters* cpuRegisters,
+uint16_t adc(CpuRegisters* cpuRegisters,
             CpuMemory* cpuMemory,
             enum AddressingMode addressingMode,
             uint8_t* extraBytes)
 {
 //    printf("ADC\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     uint16_t fullUnsignedResult = cpuRegisters->a + operand + getFlagValue(cpuRegisters->p, C_MASK);
@@ -517,10 +522,10 @@ uint8_t adc(CpuRegisters* cpuRegisters,
 
 
 
-uint8_t and(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t and(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("AND\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     cpuRegisters->a &= operand;
@@ -533,10 +538,10 @@ uint8_t and(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t cmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t cmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("CMP\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     setFlagValue(&cpuRegisters->p, C_MASK, cpuRegisters->a >= operand ? 1 : 0);
@@ -548,10 +553,10 @@ uint8_t cmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t eor(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t eor(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("EOR\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     cpuRegisters->a ^= operand;
@@ -564,10 +569,10 @@ uint8_t eor(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t lda(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t lda(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("LDA\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     cpuRegisters->a = operand;
@@ -580,10 +585,10 @@ uint8_t lda(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t ora(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t ora(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("ORA\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     cpuRegisters->a |= operand;
@@ -596,10 +601,10 @@ uint8_t ora(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t sbc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t sbc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("SBC\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     uint16_t fullUnsignedResult = cpuRegisters->a - operand - (1 - getFlagValue(cpuRegisters->p, C_MASK));
@@ -616,7 +621,7 @@ uint8_t sbc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t sta(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t sta(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("STA\n");
     storeByte__(cpuRegisters->a, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -625,7 +630,7 @@ uint8_t sta(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t asl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t asl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("ASL\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -642,7 +647,7 @@ uint8_t asl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t dec(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t dec(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("DEC\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -658,7 +663,7 @@ uint8_t dec(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t inc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t inc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("INC\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -674,10 +679,10 @@ uint8_t inc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t ldx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t ldx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("LDX\n");
-    uint8_t extraCycles;
+    uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
     cpuRegisters->x = operand;
@@ -690,7 +695,7 @@ uint8_t ldx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t lsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t lsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("LSR\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -708,7 +713,7 @@ uint8_t lsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t rol(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t rol(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("ROL\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -728,7 +733,7 @@ uint8_t rol(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t ror(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t ror(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("ROR\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -747,7 +752,7 @@ uint8_t ror(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t stx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t stx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("STX\n");
     storeByte__(cpuRegisters->x, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -756,7 +761,7 @@ uint8_t stx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bcc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bcc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bcc\n");
     return 0;
@@ -764,7 +769,7 @@ uint8_t bcc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bcs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bcs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bcs\n");
     return 0;
@@ -772,7 +777,7 @@ uint8_t bcs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t beq(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t beq(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("beq\n");
     return 0;
@@ -780,7 +785,7 @@ uint8_t beq(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bit(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bit(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bit\n");
     return 0;
@@ -788,7 +793,7 @@ uint8_t bit(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bmi(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bmi(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bmi\n");
     return 0;
@@ -796,7 +801,7 @@ uint8_t bmi(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bne(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bne(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bne\n");
     return 0;
@@ -804,7 +809,7 @@ uint8_t bne(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bpl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bpl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bpl\n");
     return 0;
@@ -812,7 +817,7 @@ uint8_t bpl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("brk\n");
     return 0;
@@ -820,7 +825,7 @@ uint8_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bvc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bvc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bvc\n");
     return 0;
@@ -828,7 +833,7 @@ uint8_t bvc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t bvs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t bvs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bvs\n");
     return 0;
@@ -836,7 +841,7 @@ uint8_t bvs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t clc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t clc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("clc\n");
     return 0;
@@ -844,7 +849,7 @@ uint8_t clc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t cld(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t cld(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("cld\n");
     return 0;
@@ -852,7 +857,7 @@ uint8_t cld(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t cli(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t cli(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("cli\n");
     return 0;
@@ -860,7 +865,7 @@ uint8_t cli(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t clv(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t clv(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("clv\n");
     return 0;
@@ -868,7 +873,7 @@ uint8_t clv(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t cpx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t cpx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("cpx\n");
     return 0;
@@ -876,7 +881,7 @@ uint8_t cpx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t cpy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t cpy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("cpy\n");
     return 0;
@@ -884,7 +889,7 @@ uint8_t cpy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t dex(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t dex(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("dex\n");
     return 0;
@@ -892,7 +897,7 @@ uint8_t dex(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t dey(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t dey(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("dey\n");
     return 0;
@@ -900,7 +905,7 @@ uint8_t dey(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t inx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t inx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("inx\n");
     return 0;
@@ -908,7 +913,7 @@ uint8_t inx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t iny(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t iny(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("iny\n");
     return 0;
@@ -916,7 +921,7 @@ uint8_t iny(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t jmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t jmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("jmp\n");
     return 0;
@@ -924,7 +929,7 @@ uint8_t jmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("jsr\n");
     return 0;
@@ -932,7 +937,7 @@ uint8_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t ldy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t ldy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("ldy\n");
     return 0;
@@ -940,7 +945,7 @@ uint8_t ldy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t nop(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t nop(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("nop\n");
     return 0;
@@ -948,7 +953,7 @@ uint8_t nop(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t pha(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t pha(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("pha\n");
     return 0;
@@ -956,7 +961,7 @@ uint8_t pha(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t php(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t php(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("php\n");
     return 0;
@@ -964,7 +969,7 @@ uint8_t php(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t pla(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t pla(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("pla\n");
     return 0;
@@ -973,7 +978,7 @@ uint8_t pla(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t plp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t plp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("plp\n");
     return 0;
@@ -981,7 +986,7 @@ uint8_t plp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t rti(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t rti(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("rti\n");
     return 0;
@@ -989,7 +994,7 @@ uint8_t rti(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t rts(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t rts(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("rts\n");
     return 0;
@@ -997,7 +1002,7 @@ uint8_t rts(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t sec(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t sec(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("sec\n");
     return 0;
@@ -1005,7 +1010,7 @@ uint8_t sec(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t sed(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t sed(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("sed\n");
     return 0;
@@ -1013,7 +1018,7 @@ uint8_t sed(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t sei(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t sei(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("sei\n");
     return 0;
@@ -1021,7 +1026,7 @@ uint8_t sei(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t sty(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t sty(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("sty\n");
     return 0;
@@ -1029,7 +1034,7 @@ uint8_t sty(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t tax(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t tax(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("tax\n");
     return 0;
@@ -1037,7 +1042,7 @@ uint8_t tax(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t tay(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t tay(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("tay\n");
     return 0;
@@ -1045,7 +1050,7 @@ uint8_t tay(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t tsx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t tsx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("tsx\n");
     return 0;
@@ -1053,7 +1058,7 @@ uint8_t tsx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t txa(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t txa(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("txa\n");
     return 0;
@@ -1061,7 +1066,7 @@ uint8_t txa(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t txs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t txs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("txs\n");
     return 0;
@@ -1069,7 +1074,7 @@ uint8_t txs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMod
 
 
 
-uint8_t tya(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+uint16_t tya(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("tya\n");
     return 0;

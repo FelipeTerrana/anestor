@@ -73,9 +73,9 @@ int cpuLoop(void* data)
         clock_t realClockTicksToWait, realClockOnStart = clock();
         uint8_t opcode = cpuMemoryFetchInstruction(cpu->memory);
 
-        uint8_t (*instructionFunction) ();
+        uint16_t  (*instructionFunction) ();
         enum AddressingMode addressingMode;
-        uint8_t instructionClockTicks;
+        uint16_t instructionClockTicks;
 
         decodeInstruction(opcode, &instructionFunction, &addressingMode, &instructionClockTicks);
 

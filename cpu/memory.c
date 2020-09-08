@@ -48,36 +48,50 @@ void cpuMemoryShutdown(CpuMemory* memory)
 
 
 
-uint8_t cpuMemoryRead(CpuMemory* memory, uint16_t address)
+uint16_t cpuMemoryRead(CpuMemory* memory, uint16_t address, uint8_t* value)
 {
     if(address >= CPU_RAM_FIRST_ADDRESS && address <= CPU_RAM_LAST_ADDRESS)
-        return memory->ram[address % CPU_RAM_SIZE];
+    {
+        *value = memory->ram[address % CPU_RAM_SIZE];
+        return 0;
+    }
 
     else if(address >= PPU_REGISTERS_FIRST_ADDRESS && address <= PPU_REGISTERS_LAST_ADDRESS)
-        return ppuRegistersRead(memory->ppuMemory, PPU_REGISTERS_FIRST_ADDRESS + address % 8);
+    {
+        *value = ppuRegistersRead(memory->ppuMemory, PPU_REGISTERS_FIRST_ADDRESS + address % 8);
+        return 0;
+    }
 
     else if(address >= RP2A03_REGISTERS_FIRST_ADDRESS && address <= RP2A03_REGISTERS_LAST_ADDRESS)
-        return 0x0; // TODO implement 2A03 registers read
+    {
+        return 0; // TODO implement 2A03 registers read
+    }
 
     else if(address >= CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CARTRIDGE_SPACE_LAST_ADDRESS)
-        return cartridgeRead(memory->cartridge, address);
+    {
+        *value = cartridgeRead(memory->cartridge, address);
+        return 0;
+    }
 
     else
-        return 0x0;
+        return 0;
 }
 
 
 
-bool cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
+uint16_t cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
 {
     if(address >= CPU_RAM_FIRST_ADDRESS && address <= CPU_RAM_LAST_ADDRESS)
     {
         memory->ram[address % CPU_RAM_SIZE] = value;
-        return true;
+        return 0;
     }
 
     else if(address >= PPU_REGISTERS_FIRST_ADDRESS && address <= PPU_REGISTERS_LAST_ADDRESS)
-        return ppuRegistersWrite(memory->ppuMemory, PPU_REGISTERS_FIRST_ADDRESS + address % 8, value);
+    {
+        ppuRegistersWrite(memory->ppuMemory, PPU_REGISTERS_FIRST_ADDRESS + address % 8, value);
+        return 0;
+    }
 
     else if(address == OAMDMA_ADDRESS)
     {
@@ -85,26 +99,34 @@ bool cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
         uint8_t oamValue;
         for (oamAddress = 0; oamAddress < 0x100; oamAddress++)
         {
-            oamValue = cpuMemoryRead(memory, (value << 8u) | oamAddress);
+            cpuMemoryRead(memory, (value << 8u) | oamAddress, &oamValue);
             ppuMemoryOamWrite(memory->ppuMemory, oamAddress, oamValue);
         }
 
-        return true;
+        return 513 + rand() % 2; // TODO make wait time more accurate
     }
 
     else if(address >= RP2A03_REGISTERS_FIRST_ADDRESS && address <= RP2A03_REGISTERS_LAST_ADDRESS)
-        return false; // TODO implement 2A03 registers write
+    {
+        return 0; // TODO implement 2A03 registers write
+    }
 
     else if(address >= CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CARTRIDGE_SPACE_LAST_ADDRESS)
-        return cartridgeWrite(memory->cartridge, address, value);
+    {
+        cartridgeWrite(memory->cartridge, address, value);
+        return 0;
+    }
 
     else
-        return false;
+        return 0;
 }
 
 
 
 uint8_t cpuMemoryFetchInstruction(CpuMemory* memory)
 {
-    return cpuMemoryRead(memory, memory->pc++);
+    uint8_t instruction;
+    cpuMemoryRead(memory, memory->pc++, &instruction);
+
+    return instruction;
 }
