@@ -16,5 +16,6 @@ uint16_t cpuMemoryRead(CpuMemory* memory, uint16_t address, uint8_t* value);
 uint16_t cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value);
 
 uint8_t cpuMemoryFetchInstruction(CpuMemory* memory);
+void cpuMemoryJump(CpuMemory* memory, uint16_t address);
 
 #endif //ANESTOR_CPU_MEMORY_H

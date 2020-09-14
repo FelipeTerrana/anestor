@@ -130,3 +130,10 @@ uint8_t cpuMemoryFetchInstruction(CpuMemory* memory)
 
     return instruction;
 }
+
+
+
+void cpuMemoryJump(CpuMemory* memory, uint16_t address)
+{
+    memory->pc = address;
+}

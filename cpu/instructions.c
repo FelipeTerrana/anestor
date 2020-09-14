@@ -820,7 +820,19 @@ uint16_t cpy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t jmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("JMP\n");
+//    printf("JMP\n");
+    if(addressingMode == ADDRESSING_ABSOLUTE)
+        cpuMemoryJump(cpuMemory, extraBytes[0] + (extraBytes[1] << 8u));
+    else if(addressingMode == ADDRESSING_INDIRECT)
+    {
+        uint8_t addressLowerByte, addressUpperByte;
+        cpuMemoryRead(cpuMemory, extraBytes[0] + (extraBytes[1] << 8u), &addressLowerByte);
+        extraBytes[0]++;
+        cpuMemoryRead(cpuMemory, extraBytes[0] + (extraBytes[1] << 8u), &addressUpperByte);
+
+        cpuMemoryJump(cpuMemory, addressLowerByte + (addressUpperByte << 8u));
+    }
+
     return 0;
 }
 
