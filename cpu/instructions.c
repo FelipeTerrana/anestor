@@ -838,6 +838,31 @@ uint16_t jmp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 
 
+uint16_t ldy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("LDY\n");
+    uint16_t extraCycles;
+    uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
+
+    cpuRegisters->y = operand;
+
+    setFlagValue(&cpuRegisters->p, Z_MASK, cpuRegisters->y == 0 ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, N_MASK, (int8_t) cpuRegisters->y < 0 ? 1 : 0);
+
+    return extraCycles;
+}
+
+
+
+uint16_t sty(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("STY\n");
+    storeByte__(cpuRegisters->y, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
+    return 0;
+}
+
+
+
 uint16_t bcc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("bcc\n");
@@ -982,14 +1007,6 @@ uint16_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 
 
-uint16_t ldy(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("ldy\n");
-    return 0;
-}
-
-
-
 uint16_t nop(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("nop\n");
@@ -1066,14 +1083,6 @@ uint16_t sed(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 uint16_t sei(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("sei\n");
-    return 0;
-}
-
-
-
-uint16_t sty(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("sty\n");
     return 0;
 }
 
