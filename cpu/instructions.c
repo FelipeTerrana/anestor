@@ -388,16 +388,19 @@ static uint8_t getOperand__(CpuRegisters* registers,
             *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
-        case ADDRESSING_ABSOLUTE_X: // TODO check page crossing
+        case ADDRESSING_ABSOLUTE_X:
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
             addressFull += registers->x;
+            *extraCycles += extraBytes[1] != (addressFull >> 8u) ? 1 : 0;
             *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
-        case ADDRESSING_ABSOLUTE_Y: // TODO check page crossing
+        case ADDRESSING_ABSOLUTE_Y:
             addressFull = extraBytes[0] + (extraBytes[1] << 8u);
+            addressUpperByte = addressFull >> 8u;
             addressFull += registers->y;
-            *extraCycles = cpuMemoryRead(memory, addressFull, &operand);
+            *extraCycles += addressUpperByte != (addressFull >> 8u) ? 1 : 0;
+            *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
         case ADDRESSING_INDIRECT_X:
@@ -409,12 +412,13 @@ static uint8_t getOperand__(CpuRegisters* registers,
             *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
-        case ADDRESSING_INDIRECT_Y: // TODO check page crossing
+        case ADDRESSING_INDIRECT_Y:
             addressZeroPage = extraBytes[0];
             *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressLowerByte);
             addressZeroPage++;
             *extraCycles += cpuMemoryRead(memory, addressZeroPage, &addressUpperByte);
             addressFull = (addressLowerByte | (addressUpperByte << 8u)) + registers->y;
+            *extraCycles += addressUpperByte != (addressFull >> 8u) ? 1 : 0;
             *extraCycles += cpuMemoryRead(memory, addressFull, &operand);
             break;
 
