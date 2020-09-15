@@ -508,17 +508,29 @@ static void storeByte__(uint8_t byte,
 
 
 
-uint16_t branch__(CpuRegisters* cpuRegisters,
-                  CpuMemory* cpuMemory,
-                  int8_t offset,
-                  uint8_t mask,
-                  uint8_t valueToBranch)
+static uint16_t branch__(CpuRegisters* cpuRegisters,
+                         CpuMemory* cpuMemory,
+                         int8_t offset,
+                         uint8_t mask,
+                         uint8_t valueToBranch)
 {
     if( getFlagValue(cpuRegisters->p, mask) == valueToBranch )
         return 1 + cpuMemoryBranch(cpuMemory, offset);
 
     else
         return 0;
+}
+
+
+
+static void increment__(CpuRegisters* cpuRegisters,
+                        uint8_t* value,
+                        int8_t incrementer)
+{
+    *value += incrementer;
+
+    setFlagValue(&cpuRegisters->p, Z_MASK, *value == 0 ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, N_MASK,  (int8_t) (*value) < 0 ? 1 : 0);
 }
 
 
@@ -979,6 +991,42 @@ uint16_t plp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 
 
+uint16_t dex(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("DEX\n");
+    increment__(cpuRegisters, &cpuRegisters->x, -1);
+    return 0;
+}
+
+
+
+uint16_t dey(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("DEY\n");
+    increment__(cpuRegisters, &cpuRegisters->y, -1);
+    return 0;
+}
+
+
+
+uint16_t inx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("INX\n");
+    increment__(cpuRegisters, &cpuRegisters->x, 1);
+    return 0;
+}
+
+
+
+uint16_t iny(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("INY\n");
+    increment__(cpuRegisters, &cpuRegisters->y, 1);
+    return 0;
+}
+
+
+
 uint16_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("brk\n");
@@ -1014,38 +1062,6 @@ uint16_t cli(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 uint16_t clv(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("clv\n");
-    return 0;
-}
-
-
-
-uint16_t dex(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("dex\n");
-    return 0;
-}
-
-
-
-uint16_t dey(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("dey\n");
-    return 0;
-}
-
-
-
-uint16_t inx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("inx\n");
-    return 0;
-}
-
-
-
-uint16_t iny(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("iny\n");
     return 0;
 }
 
