@@ -512,6 +512,21 @@ static void storeByte__(uint8_t byte,
 
 
 
+uint16_t branch__(CpuRegisters* cpuRegisters,
+                  CpuMemory* cpuMemory,
+                  int8_t offset,
+                  uint8_t mask,
+                  uint8_t valueToBranch)
+{
+    if( getFlagValue(cpuRegisters->p, mask) == valueToBranch )
+        return 1 + cpuMemoryBranch(cpuMemory, offset);
+
+    else
+        return 0;
+}
+
+
+
 #include <stdio.h>
 uint16_t adc(CpuRegisters* cpuRegisters,
             CpuMemory* cpuMemory,
@@ -865,48 +880,64 @@ uint16_t sty(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t bcc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("bcc\n");
-    return 0;
+//    printf("BCC\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], C_MASK, 0);
 }
 
 
 
 uint16_t bcs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("bcs\n");
-    return 0;
+//    printf("BCS\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], C_MASK, 1);
 }
 
 
 
 uint16_t beq(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("beq\n");
-    return 0;
+//    printf("BEQ\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], Z_MASK, 1);
 }
 
 
 
 uint16_t bmi(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("bmi\n");
-    return 0;
+//    printf("BMI\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], N_MASK, 1);
 }
 
 
 
 uint16_t bne(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("bne\n");
-    return 0;
+//    printf("BNE\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], Z_MASK, 0);
 }
 
 
 
 uint16_t bpl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("bpl\n");
-    return 0;
+//    printf("BPL\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], N_MASK, 0);
+}
+
+
+
+uint16_t bvc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("BVC\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], V_MASK, 0);
+}
+
+
+
+uint16_t bvs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("BVS\n");
+    return branch__(cpuRegisters, cpuMemory, (int8_t) extraBytes[0], V_MASK, 1);
 }
 
 
@@ -914,22 +945,6 @@ uint16_t bpl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 uint16_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("brk\n");
-    return 0;
-}
-
-
-
-uint16_t bvc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("bvc\n");
-    return 0;
-}
-
-
-
-uint16_t bvs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("bvs\n");
     return 0;
 }
 

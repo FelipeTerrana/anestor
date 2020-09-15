@@ -137,3 +137,12 @@ void cpuMemoryJump(CpuMemory* memory, uint16_t address)
 {
     memory->pc = address;
 }
+
+
+
+uint16_t cpuMemoryBranch(CpuMemory* memory, int8_t offset)
+{
+    uint8_t upperBytePreBranch = memory->pc >> 8u;
+    memory->pc += offset;
+    return upperBytePreBranch != memory->pc >> 8u ? 1 : 0;
+}
