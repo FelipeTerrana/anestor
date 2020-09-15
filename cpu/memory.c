@@ -7,6 +7,8 @@
 #define CPU_RAM_FIRST_ADDRESS 0x0000
 #define CPU_RAM_LAST_ADDRESS  0x1FFF
 
+#define CPU_RAM_STACK_START 0x0100
+
 #define PPU_REGISTERS_FIRST_ADDRESS 0x2000
 #define PPU_REGISTERS_LAST_ADDRESS  0x3FFF
 
@@ -21,6 +23,7 @@
 struct cpu_memory__ {
     uint8_t ram[CPU_RAM_SIZE];
     uint16_t pc;
+    uint8_t sp;
     PpuMemory* ppuMemory;
     Apu* apu;
     Cartridge* cartridge;
@@ -31,6 +34,7 @@ struct cpu_memory__ {
 CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Apu* apu, Cartridge* cartridge)
 {
     CpuMemory* memory = malloc( sizeof(struct cpu_memory__) );
+    memory->sp = 0xFD;
 
     memory->ppuMemory = ppuMemory;
     memory->apu = apu;
@@ -145,4 +149,20 @@ uint16_t cpuMemoryBranch(CpuMemory* memory, int8_t offset)
     uint8_t upperBytePreBranch = memory->pc >> 8u;
     memory->pc += offset;
     return upperBytePreBranch != memory->pc >> 8u ? 1 : 0;
+}
+
+
+
+void cpuMemoryPush(CpuMemory* memory, uint8_t value)
+{
+    memory->ram[ CPU_RAM_STACK_START + memory->sp ] = value;
+    memory->sp--;
+}
+
+
+
+uint8_t cpuMemoryPull(CpuMemory* memory)
+{
+    memory->sp++;
+    return memory->ram[ CPU_RAM_STACK_START + memory->sp ];
 }

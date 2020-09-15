@@ -4,8 +4,6 @@
 #include <stdbool.h>
 #include "../flag_ops.h"
 
-#define CPU_RAM_STACK_START 0x0100u
-
 #define C_MASK 0x01u
 #define Z_MASK 0x02u
 #define I_MASK 0x04u
@@ -17,7 +15,6 @@
 struct cpu_registers__ {
     uint8_t a;
     uint8_t x, y;
-    uint8_t s;
     uint8_t p;
 };
 
@@ -333,7 +330,6 @@ CpuRegisters* cpuRegistersInit()
 
     registers->p = 0x34;
     registers->a = registers->x = registers->y = 0x00;
-    registers->s = 0xFD;
 
     return registers;
 }
@@ -942,6 +938,47 @@ uint16_t bvs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 
 
+uint16_t pha(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("PHA\n");
+    cpuMemoryPush(cpuMemory, cpuRegisters->a);
+    return 0;
+}
+
+
+
+uint16_t php(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("PHP\n");
+    cpuMemoryPush(cpuMemory, cpuRegisters->p);
+    return 0;
+}
+
+
+
+uint16_t pla(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("PLA\n");
+    cpuRegisters->a = cpuMemoryPull(cpuMemory);
+
+    setFlagValue(&cpuRegisters->p, Z_MASK, cpuRegisters->a == 0 ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, N_MASK,  (int8_t) cpuRegisters->a < 0 ? 1 : 0);
+
+    return 0;
+}
+
+
+
+
+uint16_t plp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("PLP\n");
+    cpuRegisters->p = cpuMemoryPull(cpuMemory);
+    return 0;
+}
+
+
+
 uint16_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("brk\n");
@@ -1025,39 +1062,6 @@ uint16_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 uint16_t nop(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("nop\n");
-    return 0;
-}
-
-
-
-uint16_t pha(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("pha\n");
-    return 0;
-}
-
-
-
-uint16_t php(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("php\n");
-    return 0;
-}
-
-
-
-uint16_t pla(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("pla\n");
-    return 0;
-}
-
-
-
-
-uint16_t plp(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("plp\n");
     return 0;
 }
 
