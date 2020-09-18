@@ -5,7 +5,7 @@
 
 #define NATIVE_WIDTH 256
 #define NATIVE_HEIGHT 240
-#define RESOLUTION_MULTIPLIER 3
+#define RESOLUTION_MULTIPLIER 2
 
 struct ppu_renderer__ {
     PpuMemory* memory;
@@ -26,6 +26,8 @@ PpuRenderer* ppuRendererInit(PpuMemory* memory)
 
     renderer->sdlRenderer = SDL_CreateRenderer(renderer->sdlWindow, -1,
                                                SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+    SDL_RenderPresent(renderer->sdlRenderer);
 
     return renderer;
 }
