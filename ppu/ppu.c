@@ -1,6 +1,7 @@
 #include "ppu.h"
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "renderer.h"
 
 struct ppu__ {
@@ -26,6 +27,18 @@ void ppuShutdown(Ppu* ppu)
     ppuRendererShutdown(ppu->renderer);
     ppuMemoryShutdown(ppu->memory);
     free(ppu);
+}
+
+
+
+int ppuLoop(void* data)
+{
+    void** inputArray = data;
+    Ppu* ppu = inputArray[0];
+    bool* stopSignal = inputArray[1];
+
+    void* rendererInputArray[2] = {ppu->renderer, stopSignal};
+    return ppuRendererLoop(rendererInputArray);
 }
 
 

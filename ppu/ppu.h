@@ -9,6 +9,8 @@ typedef struct ppu__ Ppu;
 Ppu* ppuInit(Cartridge* cartridge);
 void ppuShutdown(Ppu* ppu);
 
+int ppuLoop(void* data);
+
 PpuMemory* ppuGetMemory(Ppu* ppu);
 
 #endif //ANESTOR_PPU_H

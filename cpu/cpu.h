@@ -15,7 +15,7 @@ typedef struct cpu__ Cpu;
 Cpu* cpuInit(PpuMemory* ppuMemory, Cartridge* cartridge);
 void cpuShutdown(Cpu* cpu);
 
-int cpuLoop(void* stopSignal);
+int cpuLoop(void* data);
 
 //void testDecoder(uint8_t opcode);
 

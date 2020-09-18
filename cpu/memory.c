@@ -16,6 +16,8 @@
 #define CARTRIDGE_SPACE_FIRST_ADDRESS 0x4020
 #define CARTRIDGE_SPACE_LAST_ADDRESS  0xFFFF
 
+#define RESET_VECTOR_ADDRESS 0xFFFC
+
 #define OAMDMA_ADDRESS 0x4014
 
 struct cpu_memory__ {
@@ -28,6 +30,18 @@ struct cpu_memory__ {
 
 
 
+static void resetPc__(CpuMemory* memory)
+{
+    uint8_t pcUpperByte, pcLowerByte;
+
+    cpuMemoryRead(memory, RESET_VECTOR_ADDRESS, &pcLowerByte);
+    cpuMemoryRead(memory, RESET_VECTOR_ADDRESS + 1, &pcUpperByte);
+
+    memory->pc = pcLowerByte + (pcUpperByte << 8u);
+}
+
+
+
 CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Apu* apu, Cartridge* cartridge)
 {
     CpuMemory* memory = malloc( sizeof(struct cpu_memory__) );
@@ -35,6 +49,8 @@ CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Apu* apu, Cartridge* cartridge)
     memory->ppuMemory = ppuMemory;
     memory->apu = apu;
     memory->cartridge = cartridge;
+
+    resetPc__(memory);
 
     return memory;
 }
