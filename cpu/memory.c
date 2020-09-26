@@ -13,8 +13,8 @@
 #define RP2A03_REGISTERS_FIRST_ADDRESS 0x4000
 #define RP2A03_REGISTERS_LAST_ADDRESS  0x401F
 
-#define CARTRIDGE_SPACE_FIRST_ADDRESS 0x4020
-#define CARTRIDGE_SPACE_LAST_ADDRESS  0xFFFF
+#define CPU_CARTRIDGE_SPACE_FIRST_ADDRESS 0x4020
+#define CPU_CARTRIDGE_SPACE_LAST_ADDRESS  0xFFFF
 
 #define RESET_VECTOR_ADDRESS 0xFFFC
 
@@ -83,7 +83,7 @@ uint16_t cpuMemoryRead(CpuMemory* memory, uint16_t address, uint8_t* value)
         return 0; // TODO implement 2A03 registers read
     }
 
-    else if(address >= CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CARTRIDGE_SPACE_LAST_ADDRESS)
+    else if(address >= CPU_CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CPU_CARTRIDGE_SPACE_LAST_ADDRESS)
     {
         *value = cartridgeRead(memory->cartridge, address);
         return 0;
@@ -127,7 +127,7 @@ uint16_t cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
         return 0; // TODO implement 2A03 registers write
     }
 
-    else if(address >= CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CARTRIDGE_SPACE_LAST_ADDRESS)
+    else if(address >= CPU_CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CPU_CARTRIDGE_SPACE_LAST_ADDRESS)
     {
         cartridgeWrite(memory->cartridge, address, value);
         return 0;
