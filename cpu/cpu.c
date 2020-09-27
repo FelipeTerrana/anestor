@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include "instructions.h"
+#include "../clock_rates.h"
 
 struct cpu__ {
     Apu* apu;
@@ -85,7 +86,7 @@ int cpuLoop(void* data)
                 extraBytes[i] = cpuMemoryFetchInstruction(cpu->memory);
 
             instructionClockTicks += instructionFunction(cpu->registers, cpu->memory, addressingMode, extraBytes);
-            realClockTicksToWait = (CLOCKS_PER_SEC / NES_CPU_CLOCKS_PER_SEC) * instructionClockTicks;
+            realClockTicksToWait = (CLOCKS_PER_SEC / CPU_CLOCK_SPEED_HZ) * instructionClockTicks;
 
             while ((clock() - realClockOnStart) < realClockTicksToWait);
         }

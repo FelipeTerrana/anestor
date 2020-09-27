@@ -8,8 +8,6 @@
 #include "apu/apu.h"
 #include "../ppu/memory.h"
 
-#define NES_CPU_CLOCKS_PER_SEC 1790
-
 typedef struct cpu__ Cpu;
 
 Cpu* cpuInit(PpuMemory* ppuMemory, Cartridge* cartridge);
