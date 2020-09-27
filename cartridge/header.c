@@ -14,9 +14,6 @@
 #define CARTRIDGE_VS_UNISYSTEM_MASK 0x01
 #define CARTRIDGE_NES_2_0_MASK 0x0C
 
-#define CARTRIDGE_MIRRORING_HORIZONTAL 0
-#define CARTRIDGE_MIRRORING_VERTICAL 1
-
 #define CARTRIDGE_TV_SYSTEM_NTSC 0
 #define CARTRIDGE_TV_SYSTEM_PAL 1
 
@@ -87,4 +84,15 @@ size_t cartridgeHeaderGetChrRomSize(const CartridgeHeader* header)
 bool cartridgeHeaderContainsTrainer(const CartridgeHeader* header)
 {
     return getFlagValue(header->flags6, CARTRIDGE_CONTAINS_TRAINER_MASK);
+}
+
+
+
+enum NametableMirroring cartridgeHeaderGetMirroring(const CartridgeHeader* header)
+{
+    if( getFlagValue(header->flags6, CARTRIDGE_IGNORE_MIRRORING_MASK) == 1 )
+        return FOUR_SCREEN;
+
+    else
+        return getFlagValue(header->flags6, CARTRIDGE_MIRRORING_MASK);
 }

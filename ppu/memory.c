@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "../flag_ops.h"
+#include "nametables.h"
 
-#define VRAM_SIZE 0x0800
 #define PALLETTE_RAM_SIZE 0x0020
 #define OAM_SIZE 0x0100
 
@@ -34,7 +34,7 @@
 
 struct ppu_memory__ {
     Cartridge* cartridge;
-    uint8_t vram[VRAM_SIZE];
+    Nametables* nametables;
     uint8_t paletteRam[PALLETTE_RAM_SIZE];
     uint8_t oam[OAM_SIZE];
 
@@ -55,6 +55,7 @@ PpuMemory* ppuMemoryInit(Cartridge* cartridge)
     PpuMemory* memory = malloc( sizeof(struct ppu_memory__) );
 
     memory->cartridge = cartridge;
+    memory->nametables = nametablesInit(memory->cartridge);
     memory->ppustatus = (1u << 5u) | (1u << 7u);
     memory->ppuctrl = memory->ppumask = memory->oamaddr = memory->ppuaddr = 0;
     memory->addressLatch = 0;
@@ -66,6 +67,7 @@ PpuMemory* ppuMemoryInit(Cartridge* cartridge)
 
 void ppuMemoryShutdown(PpuMemory* memory)
 {
+    nametablesShutdown(memory->nametables);
     free(memory);
 }
 
@@ -86,7 +88,7 @@ static uint8_t ppuMemoryRead__(PpuMemory* memory)
         read = cartridgeRead(memory->cartridge, memory->ppuaddr);
 
     else if(memory->ppuaddr >= NAMETABLE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= NAMETABLE_SPACE_LAST_ADDRESS)
-        read = memory->vram[memory->ppuaddr % NAMETABLE_SPACE_SIZE]; // TODO support cartridge-space nametables
+        read = nametablesRead(memory->nametables, memory->ppuaddr);
 
     else if(memory->ppuaddr >= PALLETTE_RAM_FIRST_ADDRESS && memory->ppuaddr <= PALLETTE_RAM_LAST_ADDRESS)
         read = memory->paletteRam[memory->ppuaddr % PALLETTE_RAM_SIZE];
@@ -105,10 +107,7 @@ static bool ppuMemoryWrite__(PpuMemory* memory, uint8_t value)
         written = cartridgeWrite(memory->cartridge, memory->ppuaddr, value);
 
     else if(memory->ppuaddr >= NAMETABLE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= NAMETABLE_SPACE_LAST_ADDRESS)
-    {
-        memory->vram[memory->ppuaddr % NAMETABLE_SPACE_SIZE] = value;
-        written = true; // TODO support cartridge-space nametables
-    }
+        written = nametablesWrite(memory->nametables, memory->ppuaddr, value);
 
     else if(memory->ppuaddr >= PALLETTE_RAM_FIRST_ADDRESS && memory->ppuaddr <= PALLETTE_RAM_LAST_ADDRESS)
     {

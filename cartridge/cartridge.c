@@ -83,3 +83,10 @@ bool cartridgeWrite(Cartridge* cartridge, uint16_t address, uint8_t value)
 {
     return cartridge->mapperFunctions.write(cartridge->mapper, address, value);
 }
+
+
+
+enum NametableMirroring cartridgeGetMirroring(const Cartridge* cartridge)
+{
+    return cartridgeHeaderGetMirroring(cartridge->header);
+}

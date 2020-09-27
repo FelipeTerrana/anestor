@@ -13,6 +13,12 @@
 
 typedef struct cartridge_header__ CartridgeHeader;
 
+enum NametableMirroring {
+    HORIZONTAL = 0,
+    VERTICAL = 1,
+    FOUR_SCREEN
+};
+
 CartridgeHeader* cartridgeHeaderInsert(FILE* romFile);
 void cartridgeHeaderRemove(CartridgeHeader* header);
 
@@ -20,5 +26,6 @@ uint16_t cartridgeHeaderGetMapper(const CartridgeHeader* header);
 size_t cartridgeHeaderGetPrgRomSize(const CartridgeHeader* header);
 size_t cartridgeHeaderGetChrRomSize(const CartridgeHeader* header);
 bool cartridgeHeaderContainsTrainer(const CartridgeHeader* header);
+enum NametableMirroring cartridgeHeaderGetMirroring(const CartridgeHeader* header);
 
 #endif //ANESTOR_HEADER_H
