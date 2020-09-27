@@ -28,6 +28,8 @@
 #define PALLETTE_RAM_FIRST_ADDRESS 0x3F00
 #define PALLETTE_RAM_LAST_ADDRESS  0x3FFF
 
+#define VRAM_ADDRESS_INCREMENT_MASK 0x04
+
 #define IN_VBLANK_MASK 0x80
 
 struct ppu_memory__ {
@@ -69,40 +71,53 @@ void ppuMemoryShutdown(PpuMemory* memory)
 
 
 
+static void incrementVramAddress__(PpuMemory* memory)
+{
+    memory->ppuaddr += getFlagValue(memory->ppuctrl, VRAM_ADDRESS_INCREMENT_MASK) == 0 ? 1 : 32;
+}
+
+
+
 static uint8_t ppuMemoryRead__(PpuMemory* memory)
 {
+    uint8_t read = 0x0;
+
     if(memory->ppuaddr >= PPU_CARTRIDGE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= PPU_CARTRIDGE_SPACE_LAST_ADDRESS)
-        return cartridgeRead(memory->cartridge, memory->ppuaddr);
+        read = cartridgeRead(memory->cartridge, memory->ppuaddr);
 
     else if(memory->ppuaddr >= NAMETABLE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= NAMETABLE_SPACE_LAST_ADDRESS)
-        return memory->vram[memory->ppuaddr % NAMETABLE_SPACE_SIZE]; // TODO support cartridge-space nametables
+        read = memory->vram[memory->ppuaddr % NAMETABLE_SPACE_SIZE]; // TODO support cartridge-space nametables
 
     else if(memory->ppuaddr >= PALLETTE_RAM_FIRST_ADDRESS && memory->ppuaddr <= PALLETTE_RAM_LAST_ADDRESS)
-        return memory->paletteRam[memory->ppuaddr % PALLETTE_RAM_SIZE];
+        read = memory->paletteRam[memory->ppuaddr % PALLETTE_RAM_SIZE];
 
-    return 0x0;
+    incrementVramAddress__(memory);
+    return read;
 }
 
 
 
 static bool ppuMemoryWrite__(PpuMemory* memory, uint8_t value)
 {
+    bool written = false;
+
     if(memory->ppuaddr >= PPU_CARTRIDGE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= PPU_CARTRIDGE_SPACE_LAST_ADDRESS)
-        return cartridgeWrite(memory->cartridge, memory->ppuaddr, value);
+        written = cartridgeWrite(memory->cartridge, memory->ppuaddr, value);
 
     else if(memory->ppuaddr >= NAMETABLE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= NAMETABLE_SPACE_LAST_ADDRESS)
     {
         memory->vram[memory->ppuaddr % NAMETABLE_SPACE_SIZE] = value;
-        return true; // TODO support cartridge-space nametables
+        written = true; // TODO support cartridge-space nametables
     }
 
     else if(memory->ppuaddr >= PALLETTE_RAM_FIRST_ADDRESS && memory->ppuaddr <= PALLETTE_RAM_LAST_ADDRESS)
     {
         memory->paletteRam[memory->ppuaddr % PALLETTE_RAM_SIZE] = value;
-        return true;
+        written = true;
     }
 
-    return false;
+    incrementVramAddress__(memory);
+    return written;
 }
 
 
