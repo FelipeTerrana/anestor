@@ -1,16 +1,11 @@
 #include "renderer.h"
 
 #include <stdlib.h>
-#include <SDL.h>
-
-#define NATIVE_WIDTH 256
-#define NATIVE_HEIGHT 240
-#define RESOLUTION_MULTIPLIER 2
+#include "screen.h"
 
 struct ppu_renderer__ {
     PpuMemory* memory;
-    SDL_Window* sdlWindow;
-    SDL_Renderer* sdlRenderer;
+    Screen* screen;
 };
 
 
@@ -19,15 +14,7 @@ PpuRenderer* ppuRendererInit(PpuMemory* memory)
 {
     PpuRenderer* renderer = malloc( sizeof(struct ppu_renderer__) );
     renderer->memory = memory;
-
-    renderer->sdlWindow = SDL_CreateWindow("aNEStor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                           NATIVE_WIDTH * RESOLUTION_MULTIPLIER, NATIVE_HEIGHT * RESOLUTION_MULTIPLIER,
-                                           SDL_WINDOW_SHOWN);
-
-    renderer->sdlRenderer = SDL_CreateRenderer(renderer->sdlWindow, -1,
-                                               SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-    SDL_RenderPresent(renderer->sdlRenderer);
+    renderer->screen = screenInit();
 
     return renderer;
 }
@@ -36,9 +23,7 @@ PpuRenderer* ppuRendererInit(PpuMemory* memory)
 
 void ppuRendererShutdown(PpuRenderer* renderer)
 {
-    SDL_DestroyRenderer(renderer->sdlRenderer);
-    SDL_DestroyWindow(renderer->sdlWindow);
-
+    screenShutdown(renderer->screen);
     free(renderer);
 }
 
@@ -50,21 +35,11 @@ int ppuRendererLoop(void* data)
     PpuRenderer* renderer = inputArray[0];
     bool* stopSignal = inputArray[1];
 
-    SDL_Event event;
-
-    while ( !(*stopSignal) )
+    while ( !screenIsClosed(renderer->screen) )
     {
         // TODO PPU rendering
-
-        while ( SDL_PollEvent(&event) )
-        {
-            if(event.type == SDL_QUIT)
-            {
-                *stopSignal = true;
-                break;
-            }
-        }
     }
 
+    *stopSignal = true;
     return 0;
 }
