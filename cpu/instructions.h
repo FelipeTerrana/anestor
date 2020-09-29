@@ -97,7 +97,6 @@ uint16_t sec(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint16_t sed(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint16_t sei(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 
-
 uint16_t tax(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint16_t tay(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint16_t tsx(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);

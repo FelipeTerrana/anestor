@@ -561,6 +561,18 @@ static void increment__(CpuRegisters* cpuRegisters,
 
 
 
+static void transfer__(CpuRegisters* cpuRegisters,
+                       uint8_t source,
+                       uint8_t* destination)
+{
+    *destination = source;
+
+    setFlagValue(&cpuRegisters->p, Z_MASK, *destination == 0 ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, N_MASK,  (int8_t) (*destination) < 0 ? 1 : 0);
+}
+
+
+
 #include <stdio.h>
 uint16_t adc(CpuRegisters* cpuRegisters,
             CpuMemory* cpuMemory,
@@ -1179,7 +1191,8 @@ uint16_t sei(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t tax(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("TAX\n");
+//    printf("TAX\n");
+    transfer__(cpuRegisters, cpuRegisters->a, &cpuRegisters->x);
     return 0;
 }
 
@@ -1187,7 +1200,8 @@ uint16_t tax(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t tay(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("TAY\n");
+//    printf("TAY\n");
+    transfer__(cpuRegisters, cpuRegisters->a, &cpuRegisters->y);
     return 0;
 }
 
@@ -1195,7 +1209,8 @@ uint16_t tay(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t tsx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("TSX\n");
+//    printf("TSX\n");
+    transfer__(cpuRegisters, cpuRegisters->s, &cpuRegisters->x);
     return 0;
 }
 
@@ -1203,7 +1218,8 @@ uint16_t tsx(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t txa(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("TXA\n");
+//    printf("TXA\n");
+    transfer__(cpuRegisters, cpuRegisters->x, &cpuRegisters->a);
     return 0;
 }
 
@@ -1211,7 +1227,8 @@ uint16_t txa(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t txs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("TXS\n");
+//    printf("TXS\n");
+    cpuRegisters->s = cpuRegisters->x;
     return 0;
 }
 
@@ -1219,6 +1236,7 @@ uint16_t txs(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t tya(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("TYA\n");
+//    printf("TYA\n");
+    transfer__(cpuRegisters, cpuRegisters->y, &cpuRegisters->a);
     return 0;
 }
