@@ -18,6 +18,8 @@ Screen* screenInit();
 void screenShutdown(Screen* screen);
 
 void screenSetPixel(Screen* screen, int x, int y, const Pixel* pixel);
+void screenSetScroll(Screen* screen, uint8_t xScroll, uint8_t yScroll);
+
 void screenRefresh(Screen* screen);
 
 bool screenIsClosed(Screen* screen);
