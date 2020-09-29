@@ -538,11 +538,13 @@ static void stackPush__(CpuRegisters* cpuRegisters,
 
 
 static uint8_t stackPop__(CpuRegisters* cpuRegisters,
-                       CpuMemory* cpuMemory)
+                          CpuMemory* cpuMemory)
 {
     uint8_t value;
     cpuRegisters->s++;
     cpuMemoryRead(cpuMemory, CPU_RAM_STACK_START + cpuRegisters->s, &value);
+
+    return value;
 }
 
 
@@ -1053,7 +1055,52 @@ uint16_t iny(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 uint16_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
-    printf("brk\n");
+//    printf("BRK\n");
+    uint16_t interruptHandler;
+    stackPush__(cpuRegisters, cpuMemory, cpuMemoryGetPc(cpuMemory));
+    stackPush__(cpuRegisters, cpuMemory, cpuRegisters->p);
+
+    setFlagValue(&cpuRegisters->p, B_MASK, 1);
+    cpuMemoryRead16(cpuMemory, IRQ_VECTOR_ADDRESS, &interruptHandler);
+    cpuMemoryJump(cpuMemory, interruptHandler);
+
+    return 0;
+}
+
+
+
+uint16_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("JSR\n");
+    uint16_t subroutineAddress = extraBytes[0] + (extraBytes[1] << 8u);
+    stackPush__(cpuRegisters, cpuMemory, cpuMemoryGetPc(cpuMemory) - 1);
+    cpuMemoryJump(cpuMemory, subroutineAddress);
+    return 0;
+}
+
+
+
+uint16_t rti(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("RTI\n");
+    uint16_t pc;
+    cpuRegisters->p = stackPop__(cpuRegisters, cpuMemory);
+    pc = stackPop__(cpuRegisters, cpuMemory);
+
+    cpuMemoryJump(cpuMemory, pc);
+    return 0;
+}
+
+
+
+uint16_t rts(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
+{
+//    printf("RTS\n");
+    uint16_t pcMinusOne;
+    cpuRegisters->p = stackPop__(cpuRegisters, cpuMemory);
+    pcMinusOne = stackPop__(cpuRegisters, cpuMemory);
+
+    cpuMemoryJump(cpuMemory, pcMinusOne + 1);
     return 0;
 }
 
@@ -1091,33 +1138,9 @@ uint16_t clv(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
 
 
-uint16_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("jsr\n");
-    return 0;
-}
-
-
-
 uint16_t nop(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
     printf("nop\n");
-    return 0;
-}
-
-
-
-uint16_t rti(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("rti\n");
-    return 0;
-}
-
-
-
-uint16_t rts(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
-{
-    printf("rts\n");
     return 0;
 }
 

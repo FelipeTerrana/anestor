@@ -16,8 +16,6 @@
 #define CPU_CARTRIDGE_SPACE_FIRST_ADDRESS 0x4020
 #define CPU_CARTRIDGE_SPACE_LAST_ADDRESS  0xFFFF
 
-#define RESET_VECTOR_ADDRESS 0xFFFC
-
 #define OAMDMA_ADDRESS 0x4014
 
 struct cpu_memory__ {
@@ -32,12 +30,7 @@ struct cpu_memory__ {
 
 static void resetPc__(CpuMemory* memory)
 {
-    uint8_t pcUpperByte, pcLowerByte;
-
-    cpuMemoryRead(memory, RESET_VECTOR_ADDRESS, &pcLowerByte);
-    cpuMemoryRead(memory, RESET_VECTOR_ADDRESS + 1, &pcUpperByte);
-
-    memory->pc = pcLowerByte + (pcUpperByte << 8u);
+    cpuMemoryRead16(memory, RESET_VECTOR_ADDRESS, &memory->pc);
 }
 
 
@@ -139,6 +132,20 @@ uint16_t cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
 
 
 
+uint16_t cpuMemoryRead16(CpuMemory* memory, uint16_t address, uint16_t* value)
+{
+    uint16_t extraCycles = 0;
+    uint8_t upperByte, lowerByte;
+
+    extraCycles += cpuMemoryRead(memory, address, &lowerByte);
+    extraCycles += cpuMemoryRead(memory, address + 1, &upperByte);
+
+    *value = lowerByte + (upperByte << 8u);
+    return extraCycles;
+}
+
+
+
 uint8_t cpuMemoryFetchInstruction(CpuMemory* memory)
 {
     uint8_t instruction;
@@ -152,6 +159,13 @@ uint8_t cpuMemoryFetchInstruction(CpuMemory* memory)
 void cpuMemoryJump(CpuMemory* memory, uint16_t address)
 {
     memory->pc = address;
+}
+
+
+
+uint16_t cpuMemoryGetPc(CpuMemory* memory)
+{
+    return memory->pc;
 }
 
 
