@@ -146,6 +146,13 @@ uint16_t cpuMemoryRead16(CpuMemory* memory, uint16_t address, uint16_t* value)
 
 
 
+PpuMemory* cpuMemoryGetPpuMemory(CpuMemory* cpuMemory)
+{
+    return cpuMemory->ppuMemory;
+}
+
+
+
 uint8_t cpuMemoryFetchInstruction(CpuMemory* memory)
 {
     uint8_t instruction;

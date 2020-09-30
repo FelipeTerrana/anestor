@@ -573,7 +573,21 @@ static void transfer__(CpuRegisters* cpuRegisters,
 
 
 
-#include <stdio.h>
+void cpuCheckInterrupt(CpuRegisters* registers, CpuMemory* memory)
+{
+    if( ppuMemoryGetNMI( cpuMemoryGetPpuMemory(memory) ) )
+    {
+        uint16_t nmiAddress;
+        stackPush__(registers, memory, cpuMemoryGetPc(memory));
+        stackPush__(registers, memory, registers->p);
+
+        cpuMemoryRead16(memory, NMI_VECTOR_ADDRESS, &nmiAddress);
+        cpuMemoryJump(memory, nmiAddress);
+    }
+}
+
+
+
 uint16_t adc(CpuRegisters* cpuRegisters,
             CpuMemory* cpuMemory,
             enum AddressingMode addressingMode,

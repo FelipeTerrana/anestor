@@ -21,6 +21,8 @@ uint16_t cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value);
 
 uint16_t cpuMemoryRead16(CpuMemory* memory, uint16_t address, uint16_t* value);
 
+PpuMemory* cpuMemoryGetPpuMemory(CpuMemory* cpuMemory);
+
 uint8_t cpuMemoryFetchInstruction(CpuMemory* memory);
 void cpuMemoryJump(CpuMemory* memory, uint16_t address);
 uint16_t cpuMemoryGetPc(CpuMemory* memory);

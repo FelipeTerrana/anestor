@@ -78,6 +78,8 @@ int cpuLoop(void* data)
         enum AddressingMode addressingMode;
         uint16_t instructionClockTicks;
 
+        cpuCheckInterrupt(cpu->registers, cpu->memory);
+
         decodeInstruction(opcode, &instructionFunction, &addressingMode, &instructionClockTicks);
 
         if(addressingMode != ADDRESSING_INVALID && instructionFunction != NULL && instructionClockTicks != 0)
@@ -94,43 +96,3 @@ int cpuLoop(void* data)
 
     return 0;
 }
-
-
-
-//#include <stdio.h>
-//void testDecoder(uint8_t opcode)
-//{
-//    const char* ADDRESSING_MODE_NAME[] = {
-//        [ADDRESSING_IMPLIED] = "ADDRESSING_IMPLIED",
-//        [ADDRESSING_ACCUMULATOR] = "ADDRESSING_ACCUMULATOR",
-//        [ADDRESSING_IMMEDIATE] = "ADDRESSING_IMMEDIATE",
-//        [ADDRESSING_ZERO_PAGE] = "ADDRESSING_ZERO_PAGE",
-//        [ADDRESSING_ZERO_PAGE_X] = "ADDRESSING_ZERO_PAGE_X",
-//        [ADDRESSING_ZERO_PAGE_Y] = "ADDRESSING_ZERO_PAGE_Y",
-//        [ADDRESSING_RELATIVE] = "ADDRESSING_RELATIVE",
-//        [ADDRESSING_ABSOLUTE] = "ADDRESSING_ABSOLUTE",
-//        [ADDRESSING_ABSOLUTE_X] = "ADDRESSING_ABSOLUTE_X",
-//        [ADDRESSING_ABSOLUTE_Y] = "ADDRESSING_ABSOLUTE_Y",
-//        [ADDRESSING_INDIRECT] = "ADDRESSING_INDIRECT",
-//        [ADDRESSING_INDIRECT_X] = "ADDRESSING_INDIRECT_X",
-//        [ADDRESSING_INDIRECT_Y] = "ADDRESSING_INDIRECT_Y",
-//
-//        [ADDRESSING_INVALID] = "ADDRESSING_INVALID"
-//    };
-//
-//    uint8_t (*instructionFunction) ();
-//    enum AddressingMode addressingMode;
-//    uint8_t instructionClockTicks;
-//
-//    decodeInstruction(opcode, &instructionFunction, &addressingMode, &instructionClockTicks);
-//
-//    printf("Opcode 0x%02X\n", opcode);
-//
-//    if(instructionFunction != NULL)
-//        instructionFunction(NULL, NULL, addressingMode, NULL);
-//    else
-//        printf("No instruction\n");
-//
-//    printf("%s\n", ADDRESSING_MODE_NAME[addressingMode]);
-//    printf("%d ticks\n", instructionClockTicks);
-//}

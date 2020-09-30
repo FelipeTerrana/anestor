@@ -37,6 +37,8 @@ void decodeInstruction(uint8_t opcode,
                        enum AddressingMode* addressingMode,
                        uint16_t* clockCycles);
 
+void cpuCheckInterrupt(CpuRegisters* registers, CpuMemory* memory);
+
 uint16_t adc(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint16_t and(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);
 uint16_t cmp(CpuRegisters*, CpuMemory*, enum AddressingMode, uint8_t*);

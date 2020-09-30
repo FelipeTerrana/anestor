@@ -5,7 +5,8 @@
 #include "screen.h"
 #include "../clock_rates.h"
 
-#define SCANLINES 262
+#define TOTAL_SCANLINES 262
+#define VBLANK_SCANLINES 20
 #define CYCLES_PER_SCANLINE 341
 
 struct ppu_renderer__ {
@@ -43,9 +44,16 @@ int ppuRendererLoop(void* data)
     while ( !screenIsClosed(renderer->screen) )
     {
         clock_t realClockTicksToWait, realClockOnStart = clock();
-        realClockTicksToWait = (CLOCKS_PER_SEC / PPU_CLOCK_SPEED_HZ) * (SCANLINES * CYCLES_PER_SCANLINE);
+        realClockTicksToWait = (CLOCKS_PER_SEC / PPU_CLOCK_SPEED_HZ) *
+                               ((TOTAL_SCANLINES - VBLANK_SCANLINES) * CYCLES_PER_SCANLINE);
 
+        ppuRegistersStopVblank(renderer->memory);
         ppuMemoryRender(renderer->memory, renderer->screen);
+
+        while ((clock() - realClockOnStart) < realClockTicksToWait);
+        realClockTicksToWait = (CLOCKS_PER_SEC / PPU_CLOCK_SPEED_HZ) * (VBLANK_SCANLINES * CYCLES_PER_SCANLINE);
+
+        ppuRegistersStartVblank(renderer->memory);
 
         while ((clock() - realClockOnStart) < realClockTicksToWait);
     }

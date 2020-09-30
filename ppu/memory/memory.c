@@ -33,6 +33,7 @@
 #define VRAM_ADDRESS_INCREMENT_MASK 0x04
 #define SPRITE_PATTERN_TABLE_MASK 0x08
 #define BACKGROUND_PATTERN_TABLE_MASK 0x10
+#define GENERATE_NMI_ON_VBLANK_MASK 0x80
 
 // PPUSTATUS
 #define IN_VBLANK_MASK 0x80
@@ -55,6 +56,7 @@ struct ppu_memory__ {
     uint16_t ppuaddr;
 
     uint8_t addressLatch;
+    bool nmi;
 };
 
 
@@ -208,6 +210,32 @@ bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value)
 
     memory->addressLatch = ~((uint8_t) 0);
     return written;
+}
+
+
+
+void ppuRegistersStartVblank(PpuMemory* memory)
+{
+    setFlagValue(&memory->ppustatus, IN_VBLANK_MASK, 1);
+    memory->nmi = getFlagValue(memory->ppuctrl, GENERATE_NMI_ON_VBLANK_MASK) == 1 ? true : false;
+}
+
+
+
+void ppuRegistersStopVblank(PpuMemory* memory)
+{
+    setFlagValue(&memory->ppustatus, IN_VBLANK_MASK, 0);
+    memory->nmi = false;
+}
+
+
+
+bool ppuMemoryGetNMI(PpuMemory* memory)
+{
+    bool old = memory->nmi;
+    memory->nmi = false;
+
+    return old;
 }
 
 
