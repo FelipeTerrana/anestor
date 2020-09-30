@@ -34,7 +34,7 @@ static uint16_t getVramIndex__(uint16_t address, enum NametableMirroring mirrori
 {
     if(mirroring == HORIZONTAL)
         return (address - NAMETABLE_SPACE_START) % NAMETABLE_SIZE +
-                address >= (NAMETABLE_SPACE_START + 2 * NAMETABLE_SIZE) ? (VRAM_SIZE / 2) : 0;
+                ((address >= (NAMETABLE_SPACE_START + 2 * NAMETABLE_SIZE)) ? (VRAM_SIZE / 2) : 0);
 
     else if(mirroring == VERTICAL)
         return (address - NAMETABLE_SPACE_START) % (2 * NAMETABLE_SIZE);
