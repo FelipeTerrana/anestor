@@ -61,9 +61,6 @@ static void renderRgbPixel(Screen* screen, int x, int y, const RgbPixel* pixel)
     pixelLarge.x = (x - screen->xScroll) * RESOLUTION_MULTIPLIER;
     pixelLarge.y = (y - screen->yScroll) * RESOLUTION_MULTIPLIER;
 
-    if(pixelLarge.x >= NATIVE_WIDTH * RESOLUTION_MULTIPLIER || pixelLarge.y >= NATIVE_HEIGHT * RESOLUTION_MULTIPLIER)
-        printf("Deu ruim meu man");
-
     SDL_RenderFillRect(screen->sdlRenderer, &pixelLarge);
 }
 

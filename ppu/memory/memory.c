@@ -243,8 +243,8 @@ void ppuMemoryRender(PpuMemory* memory, Screen* screen)
         {
             tileAddress = NAMETABLE_SPACE_FIRST_ADDRESS + nametableNumber * NAMETABLE_SIZE + addressOffset;
 
-            tileOffsetX = addressOffset % 0x20 + (nametableNumber % 2) * TOTAL_TILE_COLS;
-            tileOffsetY = addressOffset / 0x20 + (nametableNumber / 2) * TOTAL_TILE_ROWS;
+            tileOffsetX = addressOffset % 0x20 + (nametableNumber % 2) * (TOTAL_TILE_COLS / 2);
+            tileOffsetY = addressOffset / 0x20 + (nametableNumber / 2) * (TOTAL_TILE_ROWS / 2);
 
             attributeAddress = NAMETABLE_SPACE_FIRST_ADDRESS + nametableNumber * NAMETABLE_SIZE +
                                ((tileOffsetX / 4) + (tileOffsetY / 4) * 8) + TILES_PER_NAMETABLE;
