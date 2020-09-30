@@ -1,7 +1,7 @@
 #ifndef ANESTOR_RENDERER_H
 #define ANESTOR_RENDERER_H
 
-#include "memory.h"
+#include "memory/memory.h"
 
 typedef struct ppu_renderer__ PpuRenderer;
 

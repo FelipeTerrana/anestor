@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include "../cartridge/cartridge.h"
 #include "apu/apu.h"
-#include "../ppu/memory.h"
+#include "../ppu/memory/memory.h"
 
 #define NMI_VECTOR_ADDRESS 0xFFFA
 #define RESET_VECTOR_ADDRESS 0xFFFC

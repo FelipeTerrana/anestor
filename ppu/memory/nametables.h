@@ -2,7 +2,13 @@
 #define ANESTOR_NAMETABLES_H
 
 #include <stdint.h>
-#include "../cartridge/cartridge.h"
+#include "../../cartridge/cartridge.h"
+
+#define NUMBER_OF_NAMETABLES 4
+#define TILES_PER_NAMETABLE 0x03C0
+
+#define NAMETABLE_SPACE_START 0x2000
+#define NAMETABLE_SIZE 0x0400
 
 typedef struct nametables__ Nametables;
 

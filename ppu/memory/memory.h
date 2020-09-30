@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "../cartridge/cartridge.h"
+#include "../../cartridge/cartridge.h"
+#include "../screen.h"
 
 typedef struct ppu_memory__ PpuMemory;
 
@@ -14,5 +15,7 @@ uint8_t ppuRegistersRead(PpuMemory* memory, uint16_t address);
 bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value);
 
 void ppuMemoryOamWrite(PpuMemory* memory, uint8_t oamAddress, uint8_t value);
+
+void ppuMemoryRender(PpuMemory* memory, Screen* screen);
 
 #endif //ANESTOR_PPU_MEMORY_H

@@ -2,7 +2,8 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "../flag_ops.h"
+#include "../../flag_ops.h"
+#include "pattern_tables.h"
 #include "nametables.h"
 
 #define PALLETTE_RAM_SIZE 0x0020
@@ -32,8 +33,11 @@
 
 #define IN_VBLANK_MASK 0x80
 
+#define TOTAL_TILE_ROWS 60
+#define TOTAL_TILE_COLS 64
+
 struct ppu_memory__ {
-    Cartridge* cartridge;
+    PatternTables* patternTables;
     Nametables* nametables;
     uint8_t paletteRam[PALLETTE_RAM_SIZE];
     uint8_t oam[OAM_SIZE];
@@ -54,8 +58,8 @@ PpuMemory* ppuMemoryInit(Cartridge* cartridge)
 {
     PpuMemory* memory = malloc( sizeof(struct ppu_memory__) );
 
-    memory->cartridge = cartridge;
-    memory->nametables = nametablesInit(memory->cartridge);
+    memory->patternTables = patternTablesInit(cartridge);
+    memory->nametables = nametablesInit(cartridge);
     memory->ppustatus = (1u << 5u) | (1u << 7u);
     memory->ppuctrl = memory->ppumask = memory->oamaddr = memory->ppuaddr = 0;
     memory->addressLatch = 0;
@@ -67,6 +71,7 @@ PpuMemory* ppuMemoryInit(Cartridge* cartridge)
 
 void ppuMemoryShutdown(PpuMemory* memory)
 {
+    patternTablesShutdown(memory->patternTables);
     nametablesShutdown(memory->nametables);
     free(memory);
 }
@@ -85,7 +90,7 @@ static uint8_t ppuMemoryRead__(PpuMemory* memory)
     uint8_t read = 0x0;
 
     if(memory->ppuaddr >= PPU_CARTRIDGE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= PPU_CARTRIDGE_SPACE_LAST_ADDRESS)
-        read = cartridgeRead(memory->cartridge, memory->ppuaddr);
+        read = patternTablesRead(memory->patternTables, memory->ppuaddr);
 
     else if(memory->ppuaddr >= NAMETABLE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= NAMETABLE_SPACE_LAST_ADDRESS)
         read = nametablesRead(memory->nametables, memory->ppuaddr);
@@ -104,7 +109,7 @@ static bool ppuMemoryWrite__(PpuMemory* memory, uint8_t value)
     bool written = false;
 
     if(memory->ppuaddr >= PPU_CARTRIDGE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= PPU_CARTRIDGE_SPACE_LAST_ADDRESS)
-        written = cartridgeWrite(memory->cartridge, memory->ppuaddr, value);
+        written = patternTablesWrite(memory->patternTables, memory->ppuaddr, value);
 
     else if(memory->ppuaddr >= NAMETABLE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= NAMETABLE_SPACE_LAST_ADDRESS)
         written = nametablesWrite(memory->nametables, memory->ppuaddr, value);
@@ -206,4 +211,33 @@ bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value)
 void ppuMemoryOamWrite(PpuMemory* memory, uint8_t oamAddress, uint8_t value)
 {
     memory->oam[oamAddress] = value;
+}
+
+
+
+void ppuMemoryRender(PpuMemory* memory, Screen* screen)
+{
+    screenSetScroll(screen, memory->ppuscrollX, memory->ppuscrollY);
+    uint8_t tileOffsetX, tileOffsetY, bitOffsetX, bitOffsetY, nametableNumber;
+    uint16_t tileAddress, addressOffset;
+    Pixel pixel;
+
+    for(nametableNumber = 0; nametableNumber < NUMBER_OF_NAMETABLES; nametableNumber++)
+    {
+        for (addressOffset = 0; addressOffset < TILES_PER_NAMETABLE; addressOffset++)
+        {
+            tileAddress = NAMETABLE_SPACE_FIRST_ADDRESS + nametableNumber * NAMETABLE_SIZE + addressOffset;
+
+            tileOffsetX = addressOffset % 0x20 + (nametableNumber % 2) * TOTAL_TILE_COLS;
+            tileOffsetY = addressOffset / 0x20 + (nametableNumber / 2) * TOTAL_TILE_ROWS;
+
+            for(bitOffsetX = 0; bitOffsetX < 8; bitOffsetX++)
+            {
+                for(bitOffsetY = 0; bitOffsetY < 8; bitOffsetY++)
+                {
+
+                }
+            }
+        }
+    }
 }

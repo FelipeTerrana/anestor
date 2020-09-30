@@ -4,9 +4,6 @@
 
 #define VRAM_SIZE 0x0800
 
-#define NAMETABLE_SPACE_START 0x2000
-#define NAMETABLE_SIZE 0x0400
-
 struct nametables__ {
     uint8_t vram[VRAM_SIZE];
     Cartridge* cartridge;
