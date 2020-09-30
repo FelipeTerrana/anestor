@@ -36,3 +36,10 @@ bool patternTablesWrite(PatternTables* patternTables, uint16_t address, uint8_t 
 {
     return cartridgeWrite(patternTables->cartridge, address, value);
 }
+
+
+
+void renderTile(PatternTables* patternTables, uint8_t tile, uint8_t tableNumber, const uint8_t* palette, NesPixel* pixels)
+{
+    uint16_t address = (tableNumber << 12u) + (tile << 4u);
+}

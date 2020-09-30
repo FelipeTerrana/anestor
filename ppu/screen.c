@@ -2,14 +2,66 @@
 
 #include <SDL.h>
 #include <stdlib.h>
+#include "../flag_ops.h"
 
 struct screen__ {
     SDL_Window* sdlWindow;
     SDL_Renderer* sdlRenderer;
     uint8_t xScroll, yScroll;
+    uint8_t ppumask;
 
-    Pixel pixels[2 * NATIVE_HEIGHT][2 * NATIVE_WIDTH];
+    NesPixel pixels[2 * NATIVE_HEIGHT][2 * NATIVE_WIDTH];
 };
+
+typedef struct {
+    uint8_t r, g, b;
+} RgbPixel;
+
+
+
+static const RgbPixel HUE_TO_RGB[] = {
+        [0x0] = {0xCC, 0xCC, 0xCC},
+        [0x1] = {0x00, 0x00, 0xFF},
+        [0x2] = {0x80, 0x00, 0xFF},
+        [0x3] = {0xFF, 0x00, 0xFF},
+        [0x4] = {0xFF, 0x00, 0x80},
+        [0x5] = {0xFF, 0x00, 0x00},
+        [0x6] = {0xFF, 0x80, 0x00},
+        [0x7] = {0xFF, 0xFF, 0x00},
+        [0x8] = {0x80, 0xFF, 0x00},
+        [0x9] = {0x00, 0xFF, 0x00},
+        [0xA] = {0x00, 0xFF, 0x80},
+        [0xB] = {0x00, 0xFF, 0xFF},
+        [0xC] = {0x00, 0x80, 0xFF},
+        [0xD] = {0x44, 0x44, 0x44},
+        [0xE] = {0x00, 0x00, 0x00},
+        [0xF] = {0x00, 0x00, 0x00}
+};
+
+
+
+static RgbPixel nesPixelToRgb(Screen* screen, NesPixel nes)
+{
+    // TODO apply brightness
+    // TODO apply mask
+    uint8_t hue = getFlagValue(nes, 0xF);
+
+    return HUE_TO_RGB[hue];
+}
+
+
+
+static void renderRgbPixel(Screen* screen, int x, int y, const RgbPixel* pixel)
+{
+    SDL_Rect pixelLarge;
+    pixelLarge.w = pixelLarge.h = RESOLUTION_MULTIPLIER;
+
+    SDL_SetRenderDrawColor(screen->sdlRenderer, pixel->r, pixel->g, pixel->b, SDL_ALPHA_OPAQUE);
+
+    pixelLarge.x = (x - screen->xScroll) * RESOLUTION_MULTIPLIER;
+    pixelLarge.y = (y - screen->yScroll) * RESOLUTION_MULTIPLIER;
+    SDL_RenderFillRect(screen->sdlRenderer, &pixelLarge);
+}
 
 
 
@@ -25,11 +77,11 @@ Screen* screenInit()
                                                SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     screenSetScroll(screen, 0, 0);
-    Pixel black = {0x00, 0x00, 0x00};
+    NesPixel black = 0x0F;
     int x, y;
     for(y = 0; y < 2 * NATIVE_HEIGHT; y++)
         for(x = 0; x < 2 * NATIVE_WIDTH; x++)
-            screenSetPixel(screen, x, y, &black);
+            screenSetPixel(screen, x, y, black);
 
     screenRefresh(screen);
 
@@ -48,9 +100,9 @@ void screenShutdown(Screen* screen)
 
 
 
-void screenSetPixel(Screen* screen, int x, int y, const Pixel* pixel)
+void screenSetPixel(Screen* screen, int x, int y, NesPixel pixel)
 {
-    screen->pixels[y][x] = *pixel;
+    screen->pixels[y][x] = pixel;
 }
 
 
@@ -63,24 +115,23 @@ void screenSetScroll(Screen* screen, uint8_t xScroll, uint8_t yScroll)
 
 
 
+void screenSetPpumask(Screen* screen, uint8_t ppumask)
+{
+    screen->ppumask = ppumask;
+}
+
+
+
 void screenRefresh(Screen* screen)
 {
     int x, y;
-    SDL_Rect pixelLarge;
-    pixelLarge.w = pixelLarge.h = RESOLUTION_MULTIPLIER;
 
     for(y = screen->yScroll; y < screen->yScroll + NATIVE_HEIGHT; y++)
     {
         for(x = screen->xScroll; x < screen->xScroll + NATIVE_WIDTH; x++)
         {
-            SDL_SetRenderDrawColor(screen->sdlRenderer, screen->pixels[y][x].r,
-                                                        screen->pixels[y][x].g,
-                                                        screen->pixels[y][x].b,
-                                                        SDL_ALPHA_OPAQUE);
-
-            pixelLarge.x = (x - screen->xScroll) * RESOLUTION_MULTIPLIER;
-            pixelLarge.y = (y - screen->yScroll) * RESOLUTION_MULTIPLIER;
-            SDL_RenderFillRect(screen->sdlRenderer, &pixelLarge);
+            RgbPixel rgb = nesPixelToRgb(screen, screen->pixels[y][x]);
+            renderRgbPixel(screen, x, y, &rgb);
         }
     }
 

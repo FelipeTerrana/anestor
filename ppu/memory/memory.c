@@ -220,7 +220,6 @@ void ppuMemoryRender(PpuMemory* memory, Screen* screen)
     screenSetScroll(screen, memory->ppuscrollX, memory->ppuscrollY);
     uint8_t tileOffsetX, tileOffsetY, bitOffsetX, bitOffsetY, nametableNumber;
     uint16_t tileAddress, addressOffset;
-    Pixel pixel;
 
     for(nametableNumber = 0; nametableNumber < NUMBER_OF_NAMETABLES; nametableNumber++)
     {

@@ -8,17 +8,16 @@
 #define NATIVE_HEIGHT 240
 #define RESOLUTION_MULTIPLIER 2
 
-typedef struct {
-    uint8_t r, g, b;
-} Pixel;
+typedef uint8_t NesPixel;
 
 typedef struct screen__ Screen;
 
 Screen* screenInit();
 void screenShutdown(Screen* screen);
 
-void screenSetPixel(Screen* screen, int x, int y, const Pixel* pixel);
+void screenSetPixel(Screen* screen, int x, int y, NesPixel pixel);
 void screenSetScroll(Screen* screen, uint8_t xScroll, uint8_t yScroll);
+void screenSetPpumask(Screen* screen, uint8_t ppumask);
 
 void screenRefresh(Screen* screen);
 
