@@ -5,8 +5,8 @@
 #include "../../flag_ops.h"
 #include "pattern_tables.h"
 #include "nametables.h"
+#include "palette_ram.h"
 
-#define PALLETTE_RAM_SIZE 0x0020
 #define OAM_SIZE 0x0100
 
 #define PPUCTRL_CPU_ADDRESS     0x2000 // w
@@ -24,13 +24,17 @@
 #define NAMETABLE_SPACE_FIRST_ADDRESS 0x2000
 #define NAMETABLE_SPACE_LAST_ADDRESS  0x3EFF
 
-#define NAMETABLE_SPACE_SIZE 0x1000
-
 #define PALLETTE_RAM_FIRST_ADDRESS 0x3F00
 #define PALLETTE_RAM_LAST_ADDRESS  0x3FFF
 
+// PPUCTRL
+#define X_SCROLL_MSB_MASK 0x01
+#define Y_SCROLL_MSB_MASK 0x02
 #define VRAM_ADDRESS_INCREMENT_MASK 0x04
+#define SPRITE_PATTERN_TABLE_MASK 0x08
+#define BACKGROUND_PATTERN_TABLE_MASK 0x10
 
+// PPUSTATUS
 #define IN_VBLANK_MASK 0x80
 
 #define TOTAL_TILE_ROWS 60
@@ -39,7 +43,7 @@
 struct ppu_memory__ {
     PatternTables* patternTables;
     Nametables* nametables;
-    uint8_t paletteRam[PALLETTE_RAM_SIZE];
+    PaletteRam* paletteRam;
     uint8_t oam[OAM_SIZE];
 
     uint8_t ppuctrl;
@@ -60,6 +64,7 @@ PpuMemory* ppuMemoryInit(Cartridge* cartridge)
 
     memory->patternTables = patternTablesInit(cartridge);
     memory->nametables = nametablesInit(cartridge);
+    memory->paletteRam = paletteRamInit();
     memory->ppustatus = (1u << 5u) | (1u << 7u);
     memory->ppuctrl = memory->ppumask = memory->oamaddr = memory->ppuaddr = 0;
     memory->addressLatch = 0;
@@ -73,6 +78,8 @@ void ppuMemoryShutdown(PpuMemory* memory)
 {
     patternTablesShutdown(memory->patternTables);
     nametablesShutdown(memory->nametables);
+    paletteRamShutdown(memory->paletteRam);
+
     free(memory);
 }
 
@@ -96,7 +103,7 @@ static uint8_t ppuMemoryRead__(PpuMemory* memory)
         read = nametablesRead(memory->nametables, memory->ppuaddr);
 
     else if(memory->ppuaddr >= PALLETTE_RAM_FIRST_ADDRESS && memory->ppuaddr <= PALLETTE_RAM_LAST_ADDRESS)
-        read = memory->paletteRam[memory->ppuaddr % PALLETTE_RAM_SIZE];
+        read = paletteRamRead(memory->paletteRam, memory->ppuaddr % PALLETTE_RAM_SIZE);
 
     incrementVramAddress__(memory);
     return read;
@@ -115,10 +122,7 @@ static bool ppuMemoryWrite__(PpuMemory* memory, uint8_t value)
         written = nametablesWrite(memory->nametables, memory->ppuaddr, value);
 
     else if(memory->ppuaddr >= PALLETTE_RAM_FIRST_ADDRESS && memory->ppuaddr <= PALLETTE_RAM_LAST_ADDRESS)
-    {
-        memory->paletteRam[memory->ppuaddr % PALLETTE_RAM_SIZE] = value;
-        written = true;
-    }
+        written = paletteRamWrite(memory->paletteRam, memory->ppuaddr % PALLETTE_RAM_SIZE, value);
 
     incrementVramAddress__(memory);
     return written;
@@ -217,9 +221,21 @@ void ppuMemoryOamWrite(PpuMemory* memory, uint8_t oamAddress, uint8_t value)
 
 void ppuMemoryRender(PpuMemory* memory, Screen* screen)
 {
-    screenSetScroll(screen, memory->ppuscrollX, memory->ppuscrollY);
-    uint8_t tileOffsetX, tileOffsetY, bitOffsetX, bitOffsetY, nametableNumber;
-    uint16_t tileAddress, addressOffset;
+    uint8_t tileOffsetX, tileOffsetY;
+    uint8_t i;
+    uint8_t nametableNumber, patternTableNumber;
+    uint8_t attributeByte, attributeMask;
+    uint16_t tileAddress, attributeAddress, addressOffset;
+    NesPixel renderBuffer[64];
+    Palette palette;
+
+    screenSetScroll(screen,
+                    memory->ppuscrollX + NATIVE_WIDTH * getFlagValue(memory->ppuctrl, X_SCROLL_MSB_MASK),
+                    memory->ppuscrollY + NATIVE_HEIGHT * getFlagValue(memory->ppuctrl, Y_SCROLL_MSB_MASK));
+
+    screenSetPpumask(screen, memory->ppumask);
+
+    patternTableNumber = getFlagValue(memory->ppuctrl, BACKGROUND_PATTERN_TABLE_MASK);
 
     for(nametableNumber = 0; nametableNumber < NUMBER_OF_NAMETABLES; nametableNumber++)
     {
@@ -230,13 +246,25 @@ void ppuMemoryRender(PpuMemory* memory, Screen* screen)
             tileOffsetX = addressOffset % 0x20 + (nametableNumber % 2) * TOTAL_TILE_COLS;
             tileOffsetY = addressOffset / 0x20 + (nametableNumber / 2) * TOTAL_TILE_ROWS;
 
-            for(bitOffsetX = 0; bitOffsetX < 8; bitOffsetX++)
-            {
-                for(bitOffsetY = 0; bitOffsetY < 8; bitOffsetY++)
-                {
+            attributeAddress = NAMETABLE_SPACE_FIRST_ADDRESS + nametableNumber * NAMETABLE_SIZE +
+                               ((tileOffsetX / 4) + (tileOffsetY / 4) * 8) + TILES_PER_NAMETABLE;
 
-                }
+            attributeMask = 3 << (2 * ((tileOffsetX % 4) / 2 + 2 * ((tileOffsetY % 4) / 2)));
+            attributeByte = nametablesRead(memory->nametables, attributeAddress);
+            palette = paletteRamGetPalette(memory->paletteRam, getFlagValue(attributeByte, attributeMask), BACKGROUND);
+
+            patternTablesRenderTile(memory->patternTables, nametablesRead(memory->nametables, tileAddress),
+                                    patternTableNumber, palette, renderBuffer);
+
+            for(i=0; i < 64; i++)
+            {
+                screenSetPixel(screen,
+                               (tileOffsetX * 8) + (i % 8),
+                               (tileOffsetY * 8) + (i / 8),
+                               renderBuffer[i]);
             }
         }
     }
+
+    screenRefresh(screen);
 }

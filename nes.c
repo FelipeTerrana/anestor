@@ -17,7 +17,7 @@ struct nes__ {
 
 Nes* nesBoot(const char romFilename[])
 {
-    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_Init(SDL_INIT_EVERYTHING | SDL_INIT_NOPARACHUTE);
 
     Nes* nes = malloc( sizeof(struct nes__) );
     nes->cartridge = cartridgeInsert(romFilename);

@@ -16,7 +16,7 @@ Screen* screenInit();
 void screenShutdown(Screen* screen);
 
 void screenSetPixel(Screen* screen, int x, int y, NesPixel pixel);
-void screenSetScroll(Screen* screen, uint8_t xScroll, uint8_t yScroll);
+void screenSetScroll(Screen* screen, int xScroll, int yScroll);
 void screenSetPpumask(Screen* screen, uint8_t ppumask);
 
 void screenRefresh(Screen* screen);

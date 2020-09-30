@@ -7,7 +7,7 @@
 struct screen__ {
     SDL_Window* sdlWindow;
     SDL_Renderer* sdlRenderer;
-    uint8_t xScroll, yScroll;
+    int xScroll, yScroll;
     uint8_t ppumask;
 
     NesPixel pixels[2 * NATIVE_HEIGHT][2 * NATIVE_WIDTH];
@@ -60,6 +60,10 @@ static void renderRgbPixel(Screen* screen, int x, int y, const RgbPixel* pixel)
 
     pixelLarge.x = (x - screen->xScroll) * RESOLUTION_MULTIPLIER;
     pixelLarge.y = (y - screen->yScroll) * RESOLUTION_MULTIPLIER;
+
+    if(pixelLarge.x >= NATIVE_WIDTH * RESOLUTION_MULTIPLIER || pixelLarge.y >= NATIVE_HEIGHT * RESOLUTION_MULTIPLIER)
+        printf("Deu ruim meu man");
+
     SDL_RenderFillRect(screen->sdlRenderer, &pixelLarge);
 }
 
@@ -107,7 +111,7 @@ void screenSetPixel(Screen* screen, int x, int y, NesPixel pixel)
 
 
 
-void screenSetScroll(Screen* screen, uint8_t xScroll, uint8_t yScroll)
+void screenSetScroll(Screen* screen, int xScroll, int yScroll)
 {
     screen->xScroll = xScroll;
     screen->yScroll = yScroll;
