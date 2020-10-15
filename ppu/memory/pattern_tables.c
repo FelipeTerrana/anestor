@@ -53,7 +53,7 @@ void patternTablesRenderTile(PatternTables* patternTables, uint8_t tile, uint8_t
         firstPlane[i] = patternTablesRead(patternTables, address + i);
 
     for(i=BYTES_PER_TILE / 2; i < BYTES_PER_TILE; i++)
-        secondPlane[ i - BYTES_PER_TILE ] = patternTablesRead(patternTables, address + i);
+        secondPlane[ i - BYTES_PER_TILE / 2 ] = patternTablesRead(patternTables, address + i);
 
     for(i=0; i < 64; i++)
     {

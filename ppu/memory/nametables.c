@@ -1,6 +1,7 @@
 #include "nametables.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define VRAM_SIZE 0x0800
 
@@ -17,6 +18,8 @@ Nametables* nametablesInit(Cartridge* cartridge)
     Nametables* nametables = malloc( sizeof(struct nametables__) );
     nametables->cartridge = cartridge;
     nametables->mirroring = cartridgeGetMirroring(nametables->cartridge);
+
+    memset(nametables->vram, 0, VRAM_SIZE);
 
     return nametables;
 }

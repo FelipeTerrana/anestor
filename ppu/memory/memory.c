@@ -69,7 +69,8 @@ PpuMemory* ppuMemoryInit(Cartridge* cartridge)
     memory->paletteRam = paletteRamInit();
     memory->ppustatus = (1u << 5u) | (1u << 7u);
     memory->ppuctrl = memory->ppumask = memory->oamaddr = memory->ppuaddr = 0;
-    memory->addressLatch = 0;
+    memory->ppuscrollX = memory->ppuscrollY = memory->addressLatch = 0;
+    memory->nmi = false;
 
     return memory;
 }

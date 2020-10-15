@@ -1,6 +1,7 @@
 #include "memory.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define CPU_RAM_SIZE 2048
 
@@ -43,6 +44,7 @@ CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Apu* apu, Cartridge* cartridge)
     memory->apu = apu;
     memory->cartridge = cartridge;
 
+    memset(memory->ram, 0, CPU_RAM_SIZE);
     resetPc__(memory);
 
     return memory;

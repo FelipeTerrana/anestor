@@ -11,6 +11,10 @@ struct palette_ram__ {
 PaletteRam* paletteRamInit()
 {
     PaletteRam* paletteRam = malloc( sizeof(struct palette_ram__) );
+    int i;
+    for (i=0; i < PALLETTE_RAM_SIZE; i++)
+        paletteRam->ram[i] = i;
+
     return paletteRam;
 }
 
