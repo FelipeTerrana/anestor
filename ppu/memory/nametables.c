@@ -65,7 +65,8 @@ bool nametablesWrite(Nametables* nametables, uint16_t address, uint8_t value)
 
     else
     {
-        nametables->vram[ getVramIndex__(address, nametables->mirroring) ] = value;
+        uint16_t index = getVramIndex__(address, nametables->mirroring);
+        nametables->vram[ index ] = value;
         return true;
     }
 }

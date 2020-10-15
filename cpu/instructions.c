@@ -573,12 +573,41 @@ static void transfer__(CpuRegisters* cpuRegisters,
 
 
 
+static void stackPushCounter__(CpuRegisters* registers,
+                               CpuMemory* memory)
+{
+    uint16_t counterMinus1 = cpuMemoryGetPc(memory) - 1;
+    uint8_t low, high;
+    low = counterMinus1 & 0xFFu;
+    high = counterMinus1 >> 8u;
+
+    stackPush__(registers, memory, high);
+    stackPush__(registers, memory, low);
+}
+
+
+
+static void stackPopCounter__(CpuRegisters* registers,
+                              CpuMemory* memory)
+{
+    uint16_t counterMinus1;
+    uint8_t low, high;
+
+    low = stackPop__(registers, memory);
+    high = stackPop__(registers, memory);
+
+    counterMinus1 = (high << 8u) + low;
+    cpuMemoryJump(memory, counterMinus1 + 1);
+}
+
+
+
 void cpuCheckInterrupt(CpuRegisters* registers, CpuMemory* memory)
 {
     if( ppuMemoryGetNMI( cpuMemoryGetPpuMemory(memory) ) )
     {
         uint16_t nmiAddress;
-        stackPush__(registers, memory, cpuMemoryGetPc(memory));
+        stackPushCounter__(registers, memory);
         stackPush__(registers, memory, registers->p);
 
         cpuMemoryRead16(memory, NMI_VECTOR_ADDRESS, &nmiAddress);
@@ -1083,7 +1112,7 @@ uint16_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 {
 //    printf("BRK\n");
     uint16_t interruptHandler;
-    stackPush__(cpuRegisters, cpuMemory, cpuMemoryGetPc(cpuMemory));
+    stackPushCounter__(cpuRegisters, cpuMemory);
     stackPush__(cpuRegisters, cpuMemory, cpuRegisters->p);
 
     setFlagValue(&cpuRegisters->p, B_MASK, 1);
@@ -1099,7 +1128,7 @@ uint16_t jsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 {
 //    printf("JSR\n");
     uint16_t subroutineAddress = extraBytes[0] + (extraBytes[1] << 8u);
-    stackPush__(cpuRegisters, cpuMemory, cpuMemoryGetPc(cpuMemory) - 1);
+    stackPushCounter__(cpuRegisters, cpuMemory);
     cpuMemoryJump(cpuMemory, subroutineAddress);
     return 0;
 }
@@ -1111,9 +1140,8 @@ uint16_t rti(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("RTI\n");
     uint16_t pc;
     cpuRegisters->p = stackPop__(cpuRegisters, cpuMemory);
-    pc = stackPop__(cpuRegisters, cpuMemory);
+    stackPopCounter__(cpuRegisters, cpuMemory);
 
-    cpuMemoryJump(cpuMemory, pc);
     return 0;
 }
 
@@ -1122,11 +1150,7 @@ uint16_t rti(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 uint16_t rts(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("RTS\n");
-    uint16_t pcMinusOne;
-    cpuRegisters->p = stackPop__(cpuRegisters, cpuMemory);
-    pcMinusOne = stackPop__(cpuRegisters, cpuMemory);
-
-    cpuMemoryJump(cpuMemory, pcMinusOne + 1);
+    stackPopCounter__(cpuRegisters, cpuMemory);
     return 0;
 }
 
