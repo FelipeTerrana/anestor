@@ -146,12 +146,10 @@ uint8_t ppuRegistersRead(PpuMemory* memory, uint16_t address)
 
         case OAMDATA_CPU_ADDRESS:
             read = memory->oam[memory->oamaddr];
-            memory->addressLatch = read;
             break;
 
         case PPUDATA_CPU_ADDRESS:
             read = ppuMemoryRead__(memory);
-            memory->addressLatch = read;
             break;
 
         default:
@@ -190,17 +188,30 @@ bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value)
 
         case PPUSCROLL_CPU_ADDRESS:
             if (memory->addressLatch == 0)
+            {
                 memory->ppuscrollX = value;
+                memory->addressLatch = ~((uint8_t) 0);
+            }
             else
+            {
                 memory->ppuscrollY = value;
+                memory->addressLatch = 0;
+            }
             written = true;
+            memory->addressLatch = ~((uint8_t) 0);
             break;
 
         case PPUADDR_CPU_ADDRESS:
             if (memory->addressLatch == 0)
+            {
                 memory->ppuaddr = (uint16_t) value << 8u;
+                memory->addressLatch = ~((uint8_t) 0);
+            }
             else
+            {
                 memory->ppuaddr |= value;
+                memory->addressLatch = 0;
+            }
             written = true;
             break;
 
@@ -209,7 +220,6 @@ bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value)
             break;
     }
 
-    memory->addressLatch = ~((uint8_t) 0);
     return written;
 }
 
