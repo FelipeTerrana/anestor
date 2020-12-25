@@ -1,11 +1,15 @@
-#include <stdio.h>
-#include "nes.h"
+#include <iostream>
+
+extern "C" {
+    #include "nes.h"
+}
 
 int main(int argC, char* argV[])
 {
     if(argC != 2)
     {
-        printf("Usage:\n\t%s <rom_file>.nes\n", argV[0]);
+        std::cout << "Usage:" << std::endl;
+        std::cout << "\t" << argV[0] << " <rom_file>.nes" << std::endl;
         return 1;
     }
 
