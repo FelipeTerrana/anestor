@@ -6,6 +6,11 @@
 
 // PPUMASK
 #define GREYSCALE_MASK 0x01
+#define EMPHASIZE_RED_MASK 0x20
+#define EMPHASIZE_GREEN_MASK 0x40
+#define EMPHASIZE_BLUE_MASK 0x80
+
+#define min(X, Y)  ((X) < (Y) ? (X) : (Y))
 
 struct screen__ {
     SDL_Window* sdlWindow;
@@ -96,11 +101,31 @@ static const RgbPixel NES_PIXEL_TO_RGB[] = {
 
 static RgbPixel nesPixelToRgb(Screen* screen, NesPixel nes)
 {
-    // TODO apply color emphasis
     RgbPixel rgbPixel = NES_PIXEL_TO_RGB[nes];
     
-    if( getFlagValue(screen->ppumask, GREYSCALE_MASK) )
+    if( getFlagValue(screen->ppumask, GREYSCALE_MASK) == 1 )
         rgbPixel.r = rgbPixel.g = rgbPixel.b = (0.3 * rgbPixel.r + 0.59 * rgbPixel.g + 0.11 * rgbPixel.b) / 3;
+
+    if( getFlagValue(screen->ppumask, EMPHASIZE_RED_MASK) == 1 )
+    {
+        rgbPixel.r = min(255, rgbPixel.r * 1.25);
+        rgbPixel.g *= 0.75;
+        rgbPixel.b *= 0.75;
+    }
+
+    if( getFlagValue(screen->ppumask, EMPHASIZE_GREEN_MASK) == 1 )
+    {
+        rgbPixel.r *= 0.75;
+        rgbPixel.g = min(255, rgbPixel.g * 1.25);
+        rgbPixel.b *= 0.75;
+    }
+
+    if( getFlagValue(screen->ppumask, EMPHASIZE_BLUE_MASK) == 1 )
+    {
+        rgbPixel.r *= 0.75;
+        rgbPixel.g *= 0.75;
+        rgbPixel.b = min(255, rgbPixel.b * 1.25);
+    }
     
     return rgbPixel;
 }
