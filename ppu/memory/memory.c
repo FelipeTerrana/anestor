@@ -297,10 +297,12 @@ void ppuMemoryRender(PpuMemory* memory, Screen* screen)
 
             for(i=0; i < 64; i++)
             {
+                renderBuffer[i].type = BACKGROUND;
+
                 screenSetPixel(screen,
                                (tileOffsetX * 8) + (i % 8),
                                (tileOffsetY * 8) + (i / 8),
-                               renderBuffer[i]);
+                               &renderBuffer[i]);
             }
         }
     }

@@ -42,15 +42,8 @@ bool paletteRamWrite(PaletteRam* paletteRam, uint16_t address, uint8_t value)
 
 
 
-Palette paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PaletteType type)
+Palette paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PixelType type)
 {
     uint16_t index = (paletteNumber << 2u) + (type << 4u);
     return &paletteRam->ram[index];
-}
-
-
-
-NesPixel paletteRamGetBackgroundColor(PaletteRam* paletteRam)
-{
-    return paletteRam->ram[0];
 }

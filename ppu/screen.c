@@ -99,9 +99,9 @@ static const RgbPixel NES_PIXEL_TO_RGB[] = {
 
 
 
-static RgbPixel nesPixelToRgb(Screen* screen, NesPixel nes)
+static RgbPixel nesPixelToRgb(Screen* screen, const NesPixel* nes)
 {
-    RgbPixel rgbPixel = NES_PIXEL_TO_RGB[nes];
+    RgbPixel rgbPixel = NES_PIXEL_TO_RGB[nes->value];
     
     if( getFlagValue(screen->ppumask, GREYSCALE_MASK) == 1 )
         rgbPixel.r = rgbPixel.g = rgbPixel.b = (0.3 * rgbPixel.r + 0.59 * rgbPixel.g + 0.11 * rgbPixel.b) / 3;
@@ -147,6 +147,21 @@ static void renderRgbPixel(Screen* screen, int x, int y, const RgbPixel* pixel)
 
 
 
+static bool replacePixel(const NesPixel* new, const NesPixel* old)
+{
+    return (
+            old->type == BACKGROUND ||
+
+            (new->type == SPRITE && old->type == SPRITE &&
+             !new->isTransparent && new->priority < old->priority) ||
+
+            (new->type == BACKGROUND && old->type == SPRITE &&
+             !new->isTransparent && new->priority < old->priority)
+            );
+}
+
+
+
 Screen* screenInit()
 {
     Screen* screen = malloc( sizeof(struct screen__) );
@@ -159,11 +174,11 @@ Screen* screenInit()
                                                SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     screenSetScroll(screen, 0, 0);
-    NesPixel black = 0x0F;
+    NesPixel black = {0x0F, BACKGROUND, 0, true};
     int x, y;
     for(y = 0; y < 2 * NATIVE_HEIGHT; y++)
         for(x = 0; x < 2 * NATIVE_WIDTH; x++)
-            screenSetPixel(screen, x, y, black);
+            screenSetPixel(screen, x, y, &black);
 
     screenRefresh(screen);
 
@@ -182,9 +197,13 @@ void screenShutdown(Screen* screen)
 
 
 
-void screenSetPixel(Screen* screen, int x, int y, NesPixel pixel)
+/**
+ * ORDER MATTERS! Render sprites before background each frame
+ */
+void screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel)
 {
-    screen->pixels[y][x] = pixel;
+    if( replacePixel(pixel, &screen->pixels[y][x]) )
+        screen->pixels[y][x] = *pixel;
 }
 
 
@@ -212,7 +231,7 @@ void screenRefresh(Screen* screen)
     {
         for(x = screen->xScroll; x < screen->xScroll + NATIVE_WIDTH; x++)
         {
-            RgbPixel rgb = nesPixelToRgb(screen, screen->pixels[y][x]);
+            RgbPixel rgb = nesPixelToRgb(screen, &screen->pixels[y][x]);
             renderRgbPixel(screen, x, y, &rgb);
         }
     }

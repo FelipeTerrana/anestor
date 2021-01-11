@@ -8,14 +8,27 @@
 #define NATIVE_HEIGHT 240
 #define RESOLUTION_MULTIPLIER 2
 
-typedef uint8_t NesPixel;
+enum PixelType {
+    BACKGROUND = 0,
+    SPRITE = 1
+};
+
+typedef struct {
+    uint8_t value;
+    enum PixelType type;
+    bool isTransparent;
+
+    // type == SPRITE only
+    uint8_t priority;
+    bool isBehindBackground;
+} NesPixel;
 
 typedef struct screen__ Screen;
 
 Screen* screenInit();
 void screenShutdown(Screen* screen);
 
-void screenSetPixel(Screen* screen, int x, int y, NesPixel pixel);
+void screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel);
 void screenSetScroll(Screen* screen, int xScroll, int yScroll);
 void screenSetPpumask(Screen* screen, uint8_t ppumask);
 

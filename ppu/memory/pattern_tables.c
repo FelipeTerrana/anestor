@@ -42,7 +42,7 @@ bool patternTablesWrite(PatternTables* patternTables, uint16_t address, uint8_t 
 
 
 
-void patternTablesRenderTile(PatternTables* patternTables, uint8_t tile, uint8_t tableNumber, Palette palette, NesPixel* pixels)
+void patternTablesRenderTile(PatternTables* patternTables, uint8_t tile, uint8_t tableNumber, Palette palette, NesPixel pixels[])
 {
     uint16_t address = (tableNumber << 12u) + (tile << 4u);
     uint8_t firstPlane[BYTES_PER_TILE / 2], secondPlane[BYTES_PER_TILE / 2];
@@ -60,6 +60,7 @@ void patternTablesRenderTile(PatternTables* patternTables, uint8_t tile, uint8_t
         pixelValue = getFlagValue(firstPlane[i / 8], 1 << (7 - (i % 8))) +
                     (getFlagValue(secondPlane[i / 8], 1 << (7 - (i % 8))) << 1u);
 
-        pixels[i] = palette[pixelValue];
+        pixels[i].value = palette[pixelValue];
+        pixels[i].isTransparent = pixelValue == 0 ? true : false;
     }
 }

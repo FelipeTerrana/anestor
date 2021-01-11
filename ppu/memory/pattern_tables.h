@@ -15,6 +15,6 @@ void patternTablesShutdown(PatternTables* patternTables);
 uint8_t patternTablesRead(PatternTables* patternTables, uint16_t address);
 bool patternTablesWrite(PatternTables* patternTables, uint16_t address, uint8_t value);
 
-void patternTablesRenderTile(PatternTables* patternTables, uint8_t tile, uint8_t tableNumber, Palette palette, NesPixel* pixels);
+void patternTablesRenderTile(PatternTables* patternTables, uint8_t tile, uint8_t tableNumber, Palette palette, NesPixel pixels[]);
 
 #endif //ANESTOR_PATTERN_TABLES_H
