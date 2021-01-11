@@ -258,7 +258,7 @@ void ppuMemoryOamWrite(PpuMemory* memory, uint8_t oamAddress, uint8_t value)
 
 
 
-void ppuMemoryRender(PpuMemory* memory, Screen* screen)
+static void renderBackground(PpuMemory* memory, Screen* screen)
 {
     uint8_t tileOffsetX, tileOffsetY;
     uint8_t i;
@@ -267,12 +267,6 @@ void ppuMemoryRender(PpuMemory* memory, Screen* screen)
     uint16_t tileAddress, attributeAddress, addressOffset;
     NesPixel renderBuffer[64];
     Palette palette;
-
-    screenSetScroll(screen,
-                    memory->ppuscrollX + NATIVE_WIDTH * getFlagValue(memory->ppuctrl, X_SCROLL_MSB_MASK),
-                    memory->ppuscrollY + NATIVE_HEIGHT * getFlagValue(memory->ppuctrl, Y_SCROLL_MSB_MASK));
-
-    screenSetPpumask(screen, memory->ppumask);
 
     patternTableNumber = getFlagValue(memory->ppuctrl, BACKGROUND_PATTERN_TABLE_MASK);
 
@@ -306,6 +300,27 @@ void ppuMemoryRender(PpuMemory* memory, Screen* screen)
             }
         }
     }
+}
+
+
+
+static void renderSprites(PpuMemory* memory, Screen* screen)
+{
+    // TODO
+}
+
+
+
+void ppuMemoryRender(PpuMemory* memory, Screen* screen)
+{
+    screenSetScroll(screen,
+                    memory->ppuscrollX + NATIVE_WIDTH * getFlagValue(memory->ppuctrl, X_SCROLL_MSB_MASK),
+                    memory->ppuscrollY + NATIVE_HEIGHT * getFlagValue(memory->ppuctrl, Y_SCROLL_MSB_MASK));
+
+    screenSetPpumask(screen, memory->ppumask);
+
+    renderSprites(memory, screen);
+    renderBackground(memory, screen);
 
     screenRefresh(screen);
 }
