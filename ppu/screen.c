@@ -227,12 +227,18 @@ void screenRefresh(Screen* screen)
 {
     int x, y;
 
-    for(y = screen->yScroll; y < screen->yScroll + NATIVE_HEIGHT; y++)
+    for(y = 0; y < 2 * NATIVE_HEIGHT; y++)
     {
-        for(x = screen->xScroll; x < screen->xScroll + NATIVE_WIDTH; x++)
+        for(x = 0; x < 2 * NATIVE_WIDTH; x++)
         {
-            RgbPixel rgb = nesPixelToRgb(screen, &screen->pixels[y][x]);
-            renderRgbPixel(screen, x, y, &rgb);
+            if(y >= screen->yScroll && y < screen->yScroll + NATIVE_HEIGHT &&
+               x >= screen->xScroll && x < screen->xScroll + NATIVE_WIDTH)
+            {
+                RgbPixel rgb = nesPixelToRgb(screen, &screen->pixels[y][x]);
+                renderRgbPixel(screen, x, y, &rgb);
+            }
+
+            screen->pixels[y][x].type = BACKGROUND; // Prepares pixel for next frame rendering
         }
     }
 
