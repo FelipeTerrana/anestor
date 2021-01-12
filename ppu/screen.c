@@ -136,13 +136,13 @@ static RgbPixel nesPixelToRgb(Screen* screen, const NesPixel* nes)
 static bool replacePixel(const NesPixel* new, const NesPixel* old)
 {
     return (
-            old->type == BACKGROUND ||
+            new->type == BACKGROUND ||
+
+            (new->type == SPRITE && old->type == BACKGROUND &&
+             !new->isTransparent && !new->isBehindBackground) ||
 
             (new->type == SPRITE && old->type == SPRITE &&
-             !new->isTransparent && new->priority < old->priority) ||
-
-            (new->type == BACKGROUND && old->type == SPRITE &&
-             !new->isTransparent && (old->isTransparent || old->isBehindBackground))
+             !new->isTransparent && new->priority < old->priority)
             );
 }
 
@@ -188,7 +188,7 @@ void screenShutdown(Screen* screen)
 
 
 /**
- * ORDER MATTERS! Render sprites before background each frame
+ * ORDER MATTERS! Render background before sprites each frame
  */
 void screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel)
 {
@@ -245,7 +245,9 @@ void screenRefresh(Screen* screen)
                 }
             }
 
-            screen->nesPixels[y][x].type = BACKGROUND; // Prepares pixel for next frame rendering
+            // Prepares pixel for next frame rendering
+            screen->nesPixels[y][x].type = BACKGROUND;
+            screen->nesPixels[y][x].isTransparent = true;
         }
     }
 

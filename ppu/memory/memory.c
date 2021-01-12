@@ -355,8 +355,8 @@ void ppuMemoryRender(PpuMemory* memory, Screen* screen)
 
     screenSetPpumask(screen, memory->ppumask);
 
-    renderSprites(memory, screen);
     renderBackground(memory, screen);
+    renderSprites(memory, screen);
 
     screenRefresh(screen);
 }
