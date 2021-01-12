@@ -23,7 +23,7 @@ struct cpu_memory__ {
     uint8_t ram[CPU_RAM_SIZE];
     uint16_t pc;
     PpuMemory* ppuMemory;
-    Apu* apu;
+    Rp2A03* rp2A03;
     Cartridge* cartridge;
 };
 
@@ -36,12 +36,12 @@ static void resetPc__(CpuMemory* memory)
 
 
 
-CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Apu* apu, Cartridge* cartridge)
+CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Rp2A03* rp2A03, Cartridge* cartridge)
 {
     CpuMemory* memory = malloc( sizeof(struct cpu_memory__) );
 
     memory->ppuMemory = ppuMemory;
-    memory->apu = apu;
+    memory->rp2A03 = rp2A03;
     memory->cartridge = cartridge;
 
     memset(memory->ram, 0, CPU_RAM_SIZE);
@@ -75,7 +75,7 @@ uint16_t cpuMemoryRead(CpuMemory* memory, uint16_t address, uint8_t* value)
 
     else if(address >= RP2A03_REGISTERS_FIRST_ADDRESS && address <= RP2A03_REGISTERS_LAST_ADDRESS)
     {
-        return 0; // TODO implement 2A03 registers read
+        return rp2A03Read(memory->rp2A03, address, value);
     }
 
     else if(address >= CPU_CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CPU_CARTRIDGE_SPACE_LAST_ADDRESS)
@@ -104,7 +104,7 @@ uint16_t cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
         return 0;
     }
 
-    else if(address == OAMDMA_ADDRESS)
+    else if(address == OAMDMA_ADDRESS) // not implemented in rp2A03Write because cpuMemoryRead is necessary
     {
         uint16_t oamAddress;
         uint8_t oamValue;
@@ -119,7 +119,7 @@ uint16_t cpuMemoryWrite(CpuMemory* memory, uint16_t address, uint8_t value)
 
     else if(address >= RP2A03_REGISTERS_FIRST_ADDRESS && address <= RP2A03_REGISTERS_LAST_ADDRESS)
     {
-        return 0; // TODO implement 2A03 registers write
+        return rp2A03Write(memory->rp2A03, address, value);
     }
 
     else if(address >= CPU_CARTRIDGE_SPACE_FIRST_ADDRESS && address <= CPU_CARTRIDGE_SPACE_LAST_ADDRESS)

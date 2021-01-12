@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../cartridge/cartridge.h"
-#include "apu/apu.h"
+#include "rp2A03/rp2A03.h"
 #include "../ppu/memory/memory.h"
 
 #define NMI_VECTOR_ADDRESS 0xFFFA
@@ -13,7 +13,7 @@
 
 typedef struct cpu_memory__ CpuMemory;
 
-CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Apu* apu, Cartridge* cartridge);
+CpuMemory* cpuMemoryInit(PpuMemory* ppuMemory, Rp2A03* rp2A03, Cartridge* cartridge);
 void cpuMemoryShutdown(CpuMemory* memory);
 
 uint16_t cpuMemoryRead(CpuMemory* memory, uint16_t address, uint8_t* value);

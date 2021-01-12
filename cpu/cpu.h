@@ -5,7 +5,6 @@
 #include "instructions.h"
 #include "memory.h"
 #include "../cartridge/cartridge.h"
-#include "apu/apu.h"
 #include "../ppu/memory/memory.h"
 
 typedef struct cpu__ Cpu;

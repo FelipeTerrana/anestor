@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "instructions.h"
+#include "rp2A03/rp2A03.h"
 #include "../clock_waiter.h"
 
 struct cpu__ {
-    Apu* apu;
+    Rp2A03* rp2A03;
     CpuRegisters* registers;
     CpuMemory* memory;
 };
@@ -39,9 +40,9 @@ Cpu* cpuInit(PpuMemory* ppuMemory, Cartridge* cartridge)
 {
     Cpu* cpu = malloc( sizeof(struct cpu__) );
 
-    cpu->apu = apuInit();
+    cpu->rp2A03 = rp2A03Init(ppuMemory);
     cpu->registers = cpuRegistersInit();
-    cpu->memory = cpuMemoryInit(ppuMemory, cpu->apu, cartridge);
+    cpu->memory = cpuMemoryInit(ppuMemory, cpu->rp2A03, cartridge);
 
     return cpu;
 }
@@ -50,7 +51,7 @@ Cpu* cpuInit(PpuMemory* ppuMemory, Cartridge* cartridge)
 
 void cpuShutdown(Cpu* cpu)
 {
-    apuShutdown(cpu->apu);
+    rp2A03Shutdown(cpu->rp2A03);
     cpuRegistersShutdown(cpu->registers);
     cpuMemoryShutdown(cpu->memory);
 
