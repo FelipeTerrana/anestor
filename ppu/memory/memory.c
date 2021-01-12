@@ -6,6 +6,7 @@
 #include "pattern_tables.h"
 #include "nametables.h"
 #include "palette/palette_ram.h"
+#include "sprite.h"
 
 #define OAM_SIZE 0x0100
 
@@ -308,7 +309,44 @@ static void renderBackground(PpuMemory* memory, Screen* screen)
 
 static void renderSprites(PpuMemory* memory, Screen* screen)
 {
-    // TODO
+    uint8_t spriteIndex, i;
+    uint8_t patternTableNumber = getFlagValue(memory->ppuctrl, SPRITE_PATTERN_TABLE_MASK);
+    Palette* palette;
+    NesPixel renderBuffer[64];
+
+    for(spriteIndex = 0; spriteIndex < NUMBER_OF_SPRITES; spriteIndex++)
+    {
+        Sprite* sprite = spriteInit(spriteIndex, memory->oam);
+
+        palette = paletteRamGetPalette(memory->paletteRam, spriteGetPaletteNumber(sprite), SPRITE);
+
+        patternTablesRenderTile(memory->patternTables, spriteGetTileNumber(sprite),
+                                patternTableNumber, palette, renderBuffer);
+
+        for(i=0; i < 64; i++)
+        {
+            uint8_t pixelOffsetX = i % 8;
+            uint8_t pixelOffsetY = i / 8;
+
+            if(spriteIsFlippedHorizontally(sprite))
+                pixelOffsetX = 7 - pixelOffsetX;
+
+            if(spriteIsFlippedVertically(sprite))
+                pixelOffsetY = 7 - pixelOffsetY;
+
+            renderBuffer[i].type = SPRITE;
+            renderBuffer[i].priority = spriteIndex;
+            renderBuffer[i].isBehindBackground = spriteIsBehindBackground(sprite);
+
+            screenSetPixel(screen,
+                           spriteGetXPosition(sprite) + pixelOffsetX,
+                           spriteGetYPosition(sprite) + pixelOffsetY,
+                           &renderBuffer[i]);
+        }
+
+        paletteShutdown(palette);
+        spriteShutdown(sprite);
+    }
 }
 
 
