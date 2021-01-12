@@ -3,10 +3,10 @@
 
 #include <stdint.h>
 
-typedef struct palette__ Palette;
-
-Palette* paletteInit(const uint8_t* paletteRamStart, const uint8_t* backgroundColor);
-void paletteShutdown(Palette* palette);
+typedef struct {
+    const uint8_t* buffer;
+    const uint8_t* backgroundColor;
+} Palette;
 
 uint8_t paletteGetColor(Palette* palette, uint8_t colorNumber);
 

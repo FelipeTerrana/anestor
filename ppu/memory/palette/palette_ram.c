@@ -48,8 +48,10 @@ bool paletteRamWrite(PaletteRam* paletteRam, uint16_t address, uint8_t value)
 
 
 
-Palette* paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PixelType type)
+void paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PixelType type, Palette* palette)
 {
     uint16_t index = (paletteNumber << 2u) + (type << 4u);
-    return paletteInit(&paletteRam->ram[index], &paletteRam->ram[0]);
+
+    palette->buffer = &paletteRam->ram[index];
+    palette->backgroundColor = &paletteRam->ram[0];
 }

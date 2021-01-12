@@ -15,10 +15,12 @@
 struct screen__ {
     SDL_Window* sdlWindow;
     SDL_Renderer* sdlRenderer;
+    SDL_Texture* sdlTexture;
     int xScroll, yScroll;
     uint8_t ppumask;
 
-    NesPixel pixels[2 * NATIVE_HEIGHT][2 * NATIVE_WIDTH];
+    NesPixel nesPixels[2 * NATIVE_HEIGHT][2 * NATIVE_WIDTH];
+    uint32_t textureBuffer[NATIVE_HEIGHT*RESOLUTION_MULTIPLIER * NATIVE_WIDTH*RESOLUTION_MULTIPLIER];
 };
 
 typedef struct {
@@ -173,6 +175,9 @@ Screen* screenInit()
     screen->sdlRenderer = SDL_CreateRenderer(screen->sdlWindow, -1,
                                                SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
+    screen->sdlTexture = SDL_CreateTexture(screen->sdlRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC,
+                                           NATIVE_WIDTH * RESOLUTION_MULTIPLIER, NATIVE_HEIGHT * RESOLUTION_MULTIPLIER);
+
     screenSetScroll(screen, 0, 0);
     NesPixel black = {0x0F, BACKGROUND, 0, true};
     int x, y;
@@ -189,6 +194,7 @@ Screen* screenInit()
 
 void screenShutdown(Screen* screen)
 {
+    SDL_DestroyTexture(screen->sdlTexture);
     SDL_DestroyRenderer(screen->sdlRenderer);
     SDL_DestroyWindow(screen->sdlWindow);
 
@@ -202,8 +208,8 @@ void screenShutdown(Screen* screen)
  */
 void screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel)
 {
-    if( replacePixel(pixel, &screen->pixels[y][x]) )
-        screen->pixels[y][x] = *pixel;
+    if( replacePixel(pixel, &screen->nesPixels[y][x]) )
+        screen->nesPixels[y][x] = *pixel;
 }
 
 
@@ -226,6 +232,7 @@ void screenSetPpumask(Screen* screen, uint8_t ppumask)
 void screenRefresh(Screen* screen)
 {
     int x, y;
+    int offsetX, offsetY;
 
     for(y = 0; y < 2 * NATIVE_HEIGHT; y++)
     {
@@ -234,13 +241,28 @@ void screenRefresh(Screen* screen)
             if(y >= screen->yScroll && y < screen->yScroll + NATIVE_HEIGHT &&
                x >= screen->xScroll && x < screen->xScroll + NATIVE_WIDTH)
             {
-                RgbPixel rgb = nesPixelToRgb(screen, &screen->pixels[y][x]);
-                renderRgbPixel(screen, x, y, &rgb);
+                RgbPixel rgb = nesPixelToRgb(screen, &screen->nesPixels[y][x]);
+
+                for(offsetY = 0; offsetY < RESOLUTION_MULTIPLIER; offsetY++)
+                {
+                    for(offsetX = 0; offsetX < RESOLUTION_MULTIPLIER; offsetX++)
+                    {
+                        int bufferIndex = (RESOLUTION_MULTIPLIER * (y - screen->yScroll) + offsetY) * (NATIVE_WIDTH * RESOLUTION_MULTIPLIER)
+                                          + (RESOLUTION_MULTIPLIER * (x - screen->xScroll) + offsetX);
+
+                        screen->textureBuffer[bufferIndex] = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
+                    }
+                }
             }
 
-            screen->pixels[y][x].type = BACKGROUND; // Prepares pixel for next frame rendering
+            screen->nesPixels[y][x].type = BACKGROUND; // Prepares pixel for next frame rendering
         }
     }
+
+    SDL_UpdateTexture(screen->sdlTexture, NULL, screen->textureBuffer,
+                      NATIVE_WIDTH * RESOLUTION_MULTIPLIER * sizeof(screen->textureBuffer[0]));
+
+    SDL_RenderCopy(screen->sdlRenderer, screen->sdlTexture, NULL, NULL);
 
     SDL_RenderPresent(screen->sdlRenderer);
 }

@@ -2,9 +2,8 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <time.h>
 #include "instructions.h"
-#include "../clock_rates.h"
+#include "../clock_waiter.h"
 
 struct cpu__ {
     Apu* apu;
@@ -66,12 +65,15 @@ int cpuLoop(void* data)
     Cpu* cpu = inputArray[0];
     bool* stopSignal = inputArray[1];
 
+    ClockWaiter* clockWaiter = clockWaiterInit(CPU_CLOCK_SPEED_HZ);
+
     uint8_t extraBytes[MAX_OPCODE_EXTRA_BYTES];
 
     while ( !(*stopSignal) )
     {
         uint8_t i;
-        clock_t realClockTicksToWait, realClockOnStart = clock();
+
+        clockWaiterStart(clockWaiter);
 
         cpuCheckInterrupt(cpu->registers, cpu->memory);
 
@@ -89,11 +91,14 @@ int cpuLoop(void* data)
                 extraBytes[i] = cpuMemoryFetchInstruction(cpu->memory);
 
             instructionClockTicks += instructionFunction(cpu->registers, cpu->memory, addressingMode, extraBytes);
-            realClockTicksToWait = (CLOCKS_PER_SEC / CPU_CLOCK_SPEED_HZ) * instructionClockTicks;
-
-            while ((clock() - realClockOnStart) < realClockTicksToWait);
         }
+        else
+            instructionClockTicks = 0;
+
+        clockWaiterFinish(clockWaiter, instructionClockTicks);
     }
+
+    clockWaiterShutdown(clockWaiter);
 
     return 0;
 }

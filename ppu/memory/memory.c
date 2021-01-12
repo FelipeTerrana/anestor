@@ -267,7 +267,7 @@ static void renderBackground(PpuMemory* memory, Screen* screen)
     uint8_t attributeByte, attributeMask;
     uint16_t tileAddress, attributeAddress, addressOffset;
     NesPixel renderBuffer[64];
-    Palette* palette;
+    Palette palette;
 
     patternTableNumber = getFlagValue(memory->ppuctrl, BACKGROUND_PATTERN_TABLE_MASK);
 
@@ -285,12 +285,10 @@ static void renderBackground(PpuMemory* memory, Screen* screen)
 
             attributeMask = 3 << (2 * ((tileOffsetX % 4) / 2 + 2 * ((tileOffsetY % 4) / 2)));
             attributeByte = nametablesRead(memory->nametables, attributeAddress);
-            palette = paletteRamGetPalette(memory->paletteRam, getFlagValue(attributeByte, attributeMask), BACKGROUND);
+            paletteRamGetPalette(memory->paletteRam, getFlagValue(attributeByte, attributeMask), BACKGROUND, &palette);
 
             patternTablesRenderTile(memory->patternTables, nametablesRead(memory->nametables, tileAddress),
-                                    patternTableNumber, palette, renderBuffer);
-
-            paletteShutdown(palette);
+                                    patternTableNumber, &palette, renderBuffer);
 
             for(i=0; i < 64; i++)
             {
@@ -311,41 +309,39 @@ static void renderSprites(PpuMemory* memory, Screen* screen)
 {
     uint8_t spriteIndex, i;
     uint8_t patternTableNumber = getFlagValue(memory->ppuctrl, SPRITE_PATTERN_TABLE_MASK);
-    Palette* palette;
+    Sprite sprite;
+    Palette palette;
     NesPixel renderBuffer[64];
 
     for(spriteIndex = 0; spriteIndex < NUMBER_OF_SPRITES; spriteIndex++)
     {
-        Sprite* sprite = spriteInit(spriteIndex, memory->oam);
+        spriteInit(&sprite, spriteIndex, memory->oam);
 
-        palette = paletteRamGetPalette(memory->paletteRam, spriteGetPaletteNumber(sprite), SPRITE);
+        paletteRamGetPalette(memory->paletteRam, spriteGetPaletteNumber(&sprite), SPRITE, &palette);
 
-        patternTablesRenderTile(memory->patternTables, spriteGetTileNumber(sprite),
-                                patternTableNumber, palette, renderBuffer);
+        patternTablesRenderTile(memory->patternTables, spriteGetTileNumber(&sprite),
+                                patternTableNumber, &palette, renderBuffer);
 
         for(i=0; i < 64; i++)
         {
             uint8_t pixelOffsetX = i % 8;
             uint8_t pixelOffsetY = i / 8;
 
-            if(spriteIsFlippedHorizontally(sprite))
+            if(spriteIsFlippedHorizontally(&sprite))
                 pixelOffsetX = 7 - pixelOffsetX;
 
-            if(spriteIsFlippedVertically(sprite))
+            if(spriteIsFlippedVertically(&sprite))
                 pixelOffsetY = 7 - pixelOffsetY;
 
             renderBuffer[i].type = SPRITE;
             renderBuffer[i].priority = spriteIndex;
-            renderBuffer[i].isBehindBackground = spriteIsBehindBackground(sprite);
+            renderBuffer[i].isBehindBackground = spriteIsBehindBackground(&sprite);
 
             screenSetPixel(screen,
-                           spriteGetXPosition(sprite) + pixelOffsetX,
-                           spriteGetYPosition(sprite) + pixelOffsetY,
+                           spriteGetXPosition(&sprite) + pixelOffsetX,
+                           spriteGetYPosition(&sprite) + pixelOffsetY,
                            &renderBuffer[i]);
         }
-
-        paletteShutdown(palette);
-        spriteShutdown(sprite);
     }
 }
 

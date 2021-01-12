@@ -16,6 +16,6 @@ void paletteRamShutdown(PaletteRam* paletteRam);
 uint8_t paletteRamRead(PaletteRam* paletteRam, uint16_t address);
 bool paletteRamWrite(PaletteRam* paletteRam, uint16_t address, uint8_t value);
 
-Palette* paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PixelType type);
+void paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PixelType type, Palette* palette);
 
 #endif //ANESTOR_PALETTE_RAM_H
