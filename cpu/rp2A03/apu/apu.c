@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 struct apu__ {
-    uint8_t registers[APU_REGISTERS_SIZE];
+
 };
 
 
@@ -20,4 +20,20 @@ Apu* apuInit()
 void apuShutdown(Apu* apu)
 {
     free(apu);
+}
+
+
+
+uint16_t apuRead(Apu* apu, uint16_t address, uint8_t* value)
+{
+    // TODO APU read
+    return 0;
+}
+
+
+
+uint16_t apuWrite(Apu* apu, uint16_t address, uint8_t value)
+{
+    // TODO APU write
+    return 0;
 }
