@@ -1,5 +1,6 @@
 #include "joystick.h"
 
+#include <SDL.h>
 #include <stdlib.h>
 #include "../../flag_ops.h"
 
@@ -23,6 +24,32 @@ enum Player {
 
 
 
+static SDL_Scancode KEY_BINDINGS[2][8] = {
+        [PLAYER_1] = {
+                [JOY_A] = SDL_SCANCODE_KP_2,
+                [JOY_B] = SDL_SCANCODE_KP_1,
+                [JOY_SELECT] = SDL_SCANCODE_SPACE,
+                [JOY_START] = SDL_SCANCODE_RETURN,
+                [JOY_UP] = SDL_SCANCODE_W,
+                [JOY_DOWN] = SDL_SCANCODE_S,
+                [JOY_LEFT] = SDL_SCANCODE_A,
+                [JOY_RIGHT] = SDL_SCANCODE_D,
+        },
+
+        [PLAYER_2] = {
+                [JOY_A] = SDL_SCANCODE_UNKNOWN,
+                [JOY_B] = SDL_SCANCODE_UNKNOWN,
+                [JOY_SELECT] = SDL_SCANCODE_UNKNOWN,
+                [JOY_START] = SDL_SCANCODE_UNKNOWN,
+                [JOY_UP] = SDL_SCANCODE_UNKNOWN,
+                [JOY_DOWN] = SDL_SCANCODE_UNKNOWN,
+                [JOY_LEFT] = SDL_SCANCODE_UNKNOWN,
+                [JOY_RIGHT] = SDL_SCANCODE_UNKNOWN,
+        }
+};
+
+
+
 struct joystick__ {
     uint8_t strobe;
     enum JoystickButton nextToRead;
@@ -30,9 +57,9 @@ struct joystick__ {
 
 
 
-static uint8_t buttonStatus(Joystick* joystick, enum JoystickButton button, enum Player player)
+static uint8_t buttonStatus(enum JoystickButton button, enum Player player)
 {
-    return 0x0;
+    return SDL_GetKeyboardState(NULL)[ KEY_BINDINGS[player][button] ];
 }
 
 
@@ -57,13 +84,13 @@ uint16_t joystickRead(Joystick* joystick, uint16_t address, uint8_t* value)
     *value = 0x40;
 
     if(joystick->strobe == 0 && joystick->nextToRead < JOY_END_OF_LOOP)
-        *value |= buttonStatus(joystick, joystick->nextToRead++, address % 2);
+        *value |= buttonStatus(joystick->nextToRead++, address % 2);
 
     else if(joystick->strobe == 0 && joystick->nextToRead >= JOY_END_OF_LOOP)
         *value |= 0x01;
 
     else if(joystick->strobe == 1)
-        *value |= buttonStatus(joystick, JOY_A, address % 2);
+        *value |= buttonStatus(JOY_A, address % 2);
 
     return 0;
 }
