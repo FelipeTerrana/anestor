@@ -156,7 +156,7 @@ static bool replacePixel(const NesPixel* new, const NesPixel* old)
              !new->isTransparent && new->priority < old->priority) ||
 
             (new->type == BACKGROUND && old->type == SPRITE &&
-             !new->isTransparent && new->priority < old->priority)
+             !new->isTransparent && old->isBehindBackground)
             );
 }
 

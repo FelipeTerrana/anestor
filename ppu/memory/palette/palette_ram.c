@@ -29,6 +29,9 @@ void paletteRamShutdown(PaletteRam* paletteRam)
 
 uint8_t paletteRamRead(PaletteRam* paletteRam, uint16_t address)
 {
+    if(address == 0x3F10 || address == 0x3F14 || address == 0x3F18 || address == 0x3F1C)
+        address -= 0x010;
+
     return paletteRam->ram[address % PALLETTE_RAM_SIZE];
 }
 
@@ -36,14 +39,17 @@ uint8_t paletteRamRead(PaletteRam* paletteRam, uint16_t address)
 
 bool paletteRamWrite(PaletteRam* paletteRam, uint16_t address, uint8_t value)
 {
+    if(address == 0x3F10 || address == 0x3F14 || address == 0x3F18 || address == 0x3F1C)
+        address -= 0x010;
+
     paletteRam->ram[address % PALLETTE_RAM_SIZE] = value;
     return true;
 }
 
 
 
-Palette paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PixelType type)
+Palette* paletteRamGetPalette(PaletteRam* paletteRam, uint8_t paletteNumber, enum PixelType type)
 {
     uint16_t index = (paletteNumber << 2u) + (type << 4u);
-    return &paletteRam->ram[index];
+    return paletteInit(&paletteRam->ram[index], &paletteRam->ram[0]);
 }

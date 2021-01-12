@@ -5,7 +5,7 @@
 #include "../../flag_ops.h"
 #include "pattern_tables.h"
 #include "nametables.h"
-#include "palette_ram.h"
+#include "palette/palette_ram.h"
 
 #define OAM_SIZE 0x0100
 
@@ -266,7 +266,7 @@ static void renderBackground(PpuMemory* memory, Screen* screen)
     uint8_t attributeByte, attributeMask;
     uint16_t tileAddress, attributeAddress, addressOffset;
     NesPixel renderBuffer[64];
-    Palette palette;
+    Palette* palette;
 
     patternTableNumber = getFlagValue(memory->ppuctrl, BACKGROUND_PATTERN_TABLE_MASK);
 
@@ -288,6 +288,8 @@ static void renderBackground(PpuMemory* memory, Screen* screen)
 
             patternTablesRenderTile(memory->patternTables, nametablesRead(memory->nametables, tileAddress),
                                     patternTableNumber, palette, renderBuffer);
+
+            paletteShutdown(palette);
 
             for(i=0; i < 64; i++)
             {
