@@ -20,7 +20,6 @@ struct screen__ {
     uint8_t ppumask;
 
     NesPixel nesPixels[2 * NATIVE_HEIGHT][2 * NATIVE_WIDTH];
-    uint32_t textureBuffer[NATIVE_HEIGHT*RESOLUTION_MULTIPLIER * NATIVE_WIDTH*RESOLUTION_MULTIPLIER];
 };
 
 typedef struct {
@@ -134,21 +133,6 @@ static RgbPixel nesPixelToRgb(Screen* screen, const NesPixel* nes)
 
 
 
-static void renderRgbPixel(Screen* screen, int x, int y, const RgbPixel* pixel)
-{
-    SDL_Rect pixelLarge;
-    pixelLarge.w = pixelLarge.h = RESOLUTION_MULTIPLIER;
-
-    SDL_SetRenderDrawColor(screen->sdlRenderer, pixel->r, pixel->g, pixel->b, SDL_ALPHA_OPAQUE);
-
-    pixelLarge.x = (x - screen->xScroll) * RESOLUTION_MULTIPLIER;
-    pixelLarge.y = (y - screen->yScroll) * RESOLUTION_MULTIPLIER;
-
-    SDL_RenderFillRect(screen->sdlRenderer, &pixelLarge);
-}
-
-
-
 static bool replacePixel(const NesPixel* new, const NesPixel* old)
 {
     return (
@@ -175,7 +159,7 @@ Screen* screenInit()
     screen->sdlRenderer = SDL_CreateRenderer(screen->sdlWindow, -1,
                                                SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
-    screen->sdlTexture = SDL_CreateTexture(screen->sdlRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC,
+    screen->sdlTexture = SDL_CreateTexture(screen->sdlRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING,
                                            NATIVE_WIDTH * RESOLUTION_MULTIPLIER, NATIVE_HEIGHT * RESOLUTION_MULTIPLIER);
 
     screenSetScroll(screen, 0, 0);
@@ -231,8 +215,14 @@ void screenSetPpumask(Screen* screen, uint8_t ppumask)
 
 void screenRefresh(Screen* screen)
 {
+    // TODO check if rendering can be further optimized
     int x, y;
     int offsetX, offsetY;
+
+    uint32_t* textureBuffer;
+    int pitch;
+
+    SDL_LockTexture(screen->sdlTexture, NULL, (void**) &textureBuffer, &pitch);
 
     for(y = 0; y < 2 * NATIVE_HEIGHT; y++)
     {
@@ -250,7 +240,7 @@ void screenRefresh(Screen* screen)
                         int bufferIndex = (RESOLUTION_MULTIPLIER * (y - screen->yScroll) + offsetY) * (NATIVE_WIDTH * RESOLUTION_MULTIPLIER)
                                           + (RESOLUTION_MULTIPLIER * (x - screen->xScroll) + offsetX);
 
-                        screen->textureBuffer[bufferIndex] = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
+                        textureBuffer[bufferIndex] = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
                     }
                 }
             }
@@ -259,11 +249,8 @@ void screenRefresh(Screen* screen)
         }
     }
 
-    SDL_UpdateTexture(screen->sdlTexture, NULL, screen->textureBuffer,
-                      NATIVE_WIDTH * RESOLUTION_MULTIPLIER * sizeof(screen->textureBuffer[0]));
-
+    SDL_UnlockTexture(screen->sdlTexture);
     SDL_RenderCopy(screen->sdlRenderer, screen->sdlTexture, NULL, NULL);
-
     SDL_RenderPresent(screen->sdlRenderer);
 }
 
