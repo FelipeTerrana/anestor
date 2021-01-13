@@ -37,6 +37,7 @@
 #define GENERATE_NMI_ON_VBLANK_MASK 0x80
 
 // PPUSTATUS
+#define SPRITE_ZERO_HIT_MASK 0x40
 #define IN_VBLANK_MASK 0x80
 
 #define TOTAL_TILE_ROWS 60
@@ -242,6 +243,20 @@ void ppuRegistersStopVblank(PpuMemory* memory)
 
 
 
+void ppuRegistersSetSpriteZeroHit(PpuMemory* memory)
+{
+    setFlagValue(&memory->ppustatus, SPRITE_ZERO_HIT_MASK, 1);
+}
+
+
+
+void ppuRegistersClearSpriteZeroHit(PpuMemory* memory)
+{
+    setFlagValue(&memory->ppustatus, SPRITE_ZERO_HIT_MASK, 0);
+}
+
+
+
 bool ppuMemoryGetNMI(PpuMemory* memory)
 {
     bool old = memory->nmi;
@@ -312,6 +327,7 @@ static void renderSprites(PpuMemory* memory, Screen* screen)
     Sprite sprite;
     Palette palette;
     NesPixel renderBuffer[64];
+    bool spriteZeroHit;
 
     for(spriteIndex = 0; spriteIndex < NUMBER_OF_SPRITES; spriteIndex++)
     {
@@ -337,10 +353,13 @@ static void renderSprites(PpuMemory* memory, Screen* screen)
             renderBuffer[i].priority = spriteIndex;
             renderBuffer[i].isBehindBackground = spriteIsBehindBackground(&sprite);
 
-            screenSetPixel(screen,
-                           spriteGetXPosition(&sprite) + pixelOffsetX,
-                           spriteGetYPosition(&sprite) + pixelOffsetY,
-                           &renderBuffer[i]);
+            spriteZeroHit = screenSetPixel(screen,
+                                           spriteGetXPosition(&sprite) + pixelOffsetX,
+                                           spriteGetYPosition(&sprite) + pixelOffsetY,
+                                           &renderBuffer[i]);
+
+            if(spriteZeroHit)
+                ppuRegistersSetSpriteZeroHit(memory);
         }
     }
 }

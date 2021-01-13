@@ -148,6 +148,14 @@ static bool replacePixel(const NesPixel* new, const NesPixel* old)
 
 
 
+static bool spriteZeroHit(const NesPixel* new, const NesPixel* old)
+{
+    return new->type == SPRITE && new->priority == 0 && !new->isTransparent &&
+           old->type == BACKGROUND && !old->isTransparent;
+}
+
+
+
 Screen* screenInit()
 {
     Screen* screen = malloc( sizeof(struct screen__) );
@@ -189,11 +197,17 @@ void screenShutdown(Screen* screen)
 
 /**
  * ORDER MATTERS! Render background before sprites each frame
+ *
+ * @return true if a sprite zero hit occurred
  */
-void screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel)
+bool screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel)
 {
+    bool szh = spriteZeroHit(pixel, &screen->nesPixels[y][x]);
+
     if( replacePixel(pixel, &screen->nesPixels[y][x]) )
         screen->nesPixels[y][x] = *pixel;
+
+    return szh;
 }
 
 

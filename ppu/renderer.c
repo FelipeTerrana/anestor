@@ -47,6 +47,7 @@ int ppuRendererLoop(void* data)
         clockWaiterStart(clockWaiter);
 
         ppuRegistersStopVblank(renderer->memory);
+        ppuRegistersClearSpriteZeroHit(renderer->memory);
         ppuMemoryRender(renderer->memory, renderer->screen);
 
         clockWaiterFinish(clockWaiter, (TOTAL_SCANLINES - VBLANK_SCANLINES) * CYCLES_PER_SCANLINE);

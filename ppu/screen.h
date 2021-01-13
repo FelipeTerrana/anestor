@@ -28,7 +28,7 @@ typedef struct screen__ Screen;
 Screen* screenInit();
 void screenShutdown(Screen* screen);
 
-void screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel);
+bool screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel);
 void screenSetScroll(Screen* screen, int xScroll, int yScroll);
 void screenSetPpumask(Screen* screen, uint8_t ppumask);
 

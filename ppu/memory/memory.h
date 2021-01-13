@@ -17,6 +17,9 @@ bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value);
 void ppuRegistersStartVblank(PpuMemory* memory);
 void ppuRegistersStopVblank(PpuMemory* memory);
 
+void ppuRegistersSetSpriteZeroHit(PpuMemory* memory);
+void ppuRegistersClearSpriteZeroHit(PpuMemory* memory);
+
 bool ppuMemoryGetNMI(PpuMemory* memory);
 
 void ppuMemoryOamWrite(PpuMemory* memory, uint8_t oamAddress, uint8_t value);
