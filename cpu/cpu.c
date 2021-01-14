@@ -74,29 +74,30 @@ int cpuLoop(void* data)
     {
         uint8_t i;
 
-        clockWaiterStart(clockWaiter);
-
         cpuCheckInterrupt(cpu->registers, cpu->memory);
 
         uint8_t opcode = cpuMemoryFetchInstruction(cpu->memory);
 
         uint16_t  (*instructionFunction) ();
         enum AddressingMode addressingMode;
-        uint16_t instructionClockTicks;
+        uint16_t instructionClockTicks, extraClockTicks;
 
         decodeInstruction(opcode, &instructionFunction, &addressingMode, &instructionClockTicks);
 
         if(addressingMode != ADDRESSING_INVALID && instructionFunction != NULL && instructionClockTicks != 0)
         {
+            clockWaiterStart(clockWaiter, instructionClockTicks);
+
             for(i=0; i < ADRESSING_EXTRA_BYTES[addressingMode]; i++)
                 extraBytes[i] = cpuMemoryFetchInstruction(cpu->memory);
 
-            instructionClockTicks += instructionFunction(cpu->registers, cpu->memory, addressingMode, extraBytes);
-        }
-        else
-            instructionClockTicks = 0;
+            extraClockTicks = instructionFunction(cpu->registers, cpu->memory, addressingMode, extraBytes);
 
-        clockWaiterFinish(clockWaiter, instructionClockTicks);
+            clockWaiterFinish(clockWaiter);
+
+            clockWaiterStart(clockWaiter, extraClockTicks);
+            clockWaiterFinish(clockWaiter);
+        }
     }
 
     clockWaiterShutdown(clockWaiter);

@@ -44,17 +44,17 @@ int ppuRendererLoop(void* data)
 
     while ( !screenIsClosed(renderer->screen) )
     {
-        clockWaiterStart(clockWaiter);
+        clockWaiterStart(clockWaiter, (TOTAL_SCANLINES - VBLANK_SCANLINES) * CYCLES_PER_SCANLINE);
 
         ppuRegistersStopVblank(renderer->memory);
         ppuRegistersClearSpriteZeroHit(renderer->memory);
         ppuMemoryRender(renderer->memory, renderer->screen);
 
-        clockWaiterFinish(clockWaiter, (TOTAL_SCANLINES - VBLANK_SCANLINES) * CYCLES_PER_SCANLINE);
+        clockWaiterFinish(clockWaiter);
 
-        clockWaiterStart(clockWaiter);
+        clockWaiterStart(clockWaiter, VBLANK_SCANLINES * CYCLES_PER_SCANLINE);
         ppuRegistersStartVblank(renderer->memory);
-        clockWaiterFinish(clockWaiter, VBLANK_SCANLINES * CYCLES_PER_SCANLINE);
+        clockWaiterFinish(clockWaiter);
     }
 
     clockWaiterShutdown(clockWaiter);

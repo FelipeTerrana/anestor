@@ -13,7 +13,7 @@ typedef struct clock_waiter__ ClockWaiter;
 ClockWaiter* clockWaiterInit(float clockSpeedHz);
 void clockWaiterShutdown(ClockWaiter* clockWaiter);
 
-void clockWaiterStart(ClockWaiter* clockWaiter);
-void clockWaiterFinish(ClockWaiter* clockWaiter, int cycles);
+void clockWaiterStart(ClockWaiter* clockWaiter, int cycles);
+void clockWaiterFinish(ClockWaiter* clockWaiter);
 
 #endif //ANESTOR_CLOCK_WAITER_H
