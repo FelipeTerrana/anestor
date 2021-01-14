@@ -234,34 +234,28 @@ void screenRefresh(Screen* screen)
     int offsetX, offsetY;
 
     uint32_t* textureBuffer;
+    uint32_t textureColor;
     int pitch;
 
     SDL_LockTexture(screen->sdlTexture, NULL, (void**) &textureBuffer, &pitch);
 
-    for(y = 0; y < 2 * NATIVE_HEIGHT; y++)
+    for(y = screen->yScroll; y < screen->yScroll + NATIVE_HEIGHT; y++)
     {
-        for(x = 0; x < 2 * NATIVE_WIDTH; x++)
+        for(x = screen->xScroll; x < screen->xScroll + NATIVE_WIDTH; x++)
         {
-            if(y >= screen->yScroll && y < screen->yScroll + NATIVE_HEIGHT &&
-               x >= screen->xScroll && x < screen->xScroll + NATIVE_WIDTH)
+            RgbPixel rgb = nesPixelToRgb(screen, &screen->nesPixels[y][x]);
+            textureColor = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
+
+            for(offsetY = 0; offsetY < RESOLUTION_MULTIPLIER; offsetY++)
             {
-                RgbPixel rgb = nesPixelToRgb(screen, &screen->nesPixels[y][x]);
-
-                for(offsetY = 0; offsetY < RESOLUTION_MULTIPLIER; offsetY++)
+                for(offsetX = 0; offsetX < RESOLUTION_MULTIPLIER; offsetX++)
                 {
-                    for(offsetX = 0; offsetX < RESOLUTION_MULTIPLIER; offsetX++)
-                    {
-                        int bufferIndex = (RESOLUTION_MULTIPLIER * (y - screen->yScroll) + offsetY) * (NATIVE_WIDTH * RESOLUTION_MULTIPLIER)
-                                          + (RESOLUTION_MULTIPLIER * (x - screen->xScroll) + offsetX);
+                    int bufferIndex = (RESOLUTION_MULTIPLIER * (y - screen->yScroll) + offsetY) * (NATIVE_WIDTH * RESOLUTION_MULTIPLIER)
+                                      + (RESOLUTION_MULTIPLIER * (x - screen->xScroll) + offsetX);
 
-                        textureBuffer[bufferIndex] = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
-                    }
+                    textureBuffer[bufferIndex] = textureColor;
                 }
             }
-
-            // Prepares pixel for next frame rendering
-            screen->nesPixels[y][x].type = BACKGROUND;
-            screen->nesPixels[y][x].isTransparent = true;
         }
     }
 
