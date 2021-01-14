@@ -22,6 +22,12 @@ Nes* nesBoot(const char romFilename[])
     Nes* nes = malloc( sizeof(struct nes__) );
     nes->cartridge = cartridgeInsert(romFilename);
 
+    if(nes->cartridge == NULL)
+    {
+        free(nes);
+        return NULL;
+    }
+
     nes->ppu = ppuInit(nes->cartridge);
     nes->cpu = cpuInit( ppuGetMemory(nes->ppu), nes->cartridge );
 

@@ -10,8 +10,12 @@ int main(int argC, char* argV[])
     }
 
     Nes* nes = nesBoot(argV[1]);
-    nesRun(nes);
-    nesShutdown(nes);
+
+    if(nes != NULL)
+    {
+        nesRun(nes);
+        nesShutdown(nes);
+    }
 
     return 0;
 }

@@ -37,11 +37,10 @@ CartridgeHeader* cartridgeHeaderInsert(FILE* romFile)
 
     size_t itemsRead = fread(header, sizeof(struct cartridge_header__), 1, romFile);
 
-    // TODO support CHR RAM
     // TODO support iNES 2.0
     if( itemsRead == 0 || header->nes[0] != 'N' || header->nes[1] != 'E' ||
         header->nes[2] != 'S' || header->nes[3] != 0x1A ||
-        getFlagValue(header->flags7, CARTRIDGE_NES_2_0_MASK) == 2 || header->chrRomSteps == 0 )
+        getFlagValue(header->flags7, CARTRIDGE_NES_2_0_MASK) == 2 )
     {
         free(header);
         return NULL;
