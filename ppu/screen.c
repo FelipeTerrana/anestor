@@ -6,6 +6,10 @@
 
 // PPUMASK
 #define GREYSCALE_MASK 0x01
+#define SHOW_BACKGROUND_LEFT 0x02
+#define SHOW_SPRITES_LEFT 0x04
+#define SHOW_BACKGROUND 0x08
+#define SHOW_SPRITES 0x10
 #define EMPHASIZE_RED_MASK 0x20
 #define EMPHASIZE_GREEN_MASK 0x40
 #define EMPHASIZE_BLUE_MASK 0x80
@@ -148,10 +152,27 @@ static bool replacePixel(const NesPixel* new, const NesPixel* old)
 
 
 
-static bool spriteZeroHit(const NesPixel* new, const NesPixel* old)
+static bool spriteZeroHit(Screen* screen, int x, int y, const NesPixel* new)
 {
-    return new->type == SPRITE && new->priority == 0 && !new->isTransparent &&
-           old->type == BACKGROUND && !old->isTransparent;
+    return x - screen->xScroll != 255 &&
+           !(x - screen->xScroll <= 7 && (getFlagValue(screen->ppumask, SHOW_BACKGROUND_LEFT) == 0 ||
+                                          getFlagValue(screen->ppumask, SHOW_SPRITES_LEFT) == 0)) &&
+
+           getFlagValue(screen->ppumask, SHOW_BACKGROUND) != 0 && getFlagValue(screen->ppumask, SHOW_SPRITES) != 0 &&
+           new->type == SPRITE && new->priority == 0 && !new->isTransparent &&
+           screen->nesPixels[y][x].type == BACKGROUND && !screen->nesPixels[y][x].isTransparent;
+}
+
+
+
+static bool renderPixel(Screen* screen, int x, int y)
+{
+    return !(screen->nesPixels[y][x].type == BACKGROUND && getFlagValue(screen->ppumask, SHOW_BACKGROUND) == 0) &&
+           !(screen->nesPixels[y][x].type == SPRITE && getFlagValue(screen->ppumask, SHOW_SPRITES) == 0) &&
+           !(x - screen->xScroll <= 7 &&
+             screen->nesPixels[y][x].type == BACKGROUND && getFlagValue(screen->ppumask, SHOW_BACKGROUND_LEFT) == 0) &&
+           !(x - screen->xScroll <= 7 &&
+             screen->nesPixels[y][x].type == SPRITE && getFlagValue(screen->ppumask, SHOW_SPRITES_LEFT) == 0);
 }
 
 
@@ -202,7 +223,7 @@ void screenShutdown(Screen* screen)
  */
 bool screenSetPixel(Screen* screen, int x, int y, const NesPixel* pixel)
 {
-    bool szh = spriteZeroHit(pixel, &screen->nesPixels[y][x]);
+    bool szh = spriteZeroHit(screen, x, y, pixel);
 
     if( replacePixel(pixel, &screen->nesPixels[y][x]) )
         screen->nesPixels[y][x] = *pixel;
@@ -243,17 +264,21 @@ void screenRefresh(Screen* screen)
     {
         for(x = screen->xScroll; x < screen->xScroll + NATIVE_WIDTH; x++)
         {
-            RgbPixel rgb = nesPixelToRgb(screen, &screen->nesPixels[y][x]);
-            textureColor = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
-
-            for(offsetY = 0; offsetY < RESOLUTION_MULTIPLIER; offsetY++)
+            if(renderPixel(screen, x, y))
             {
-                for(offsetX = 0; offsetX < RESOLUTION_MULTIPLIER; offsetX++)
-                {
-                    int bufferIndex = (RESOLUTION_MULTIPLIER * (y - screen->yScroll) + offsetY) * (NATIVE_WIDTH * RESOLUTION_MULTIPLIER)
-                                      + (RESOLUTION_MULTIPLIER * (x - screen->xScroll) + offsetX);
+                RgbPixel rgb = nesPixelToRgb(screen, &screen->nesPixels[y][x]);
+                textureColor = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
 
-                    textureBuffer[bufferIndex] = textureColor;
+                for (offsetY = 0; offsetY < RESOLUTION_MULTIPLIER; offsetY++)
+                {
+                    for (offsetX = 0; offsetX < RESOLUTION_MULTIPLIER; offsetX++)
+                    {
+                        int bufferIndex = (RESOLUTION_MULTIPLIER * (y - screen->yScroll) + offsetY) *
+                                          (NATIVE_WIDTH * RESOLUTION_MULTIPLIER)
+                                          + (RESOLUTION_MULTIPLIER * (x - screen->xScroll) + offsetX);
+
+                        textureBuffer[bufferIndex] = textureColor;
+                    }
                 }
             }
         }
