@@ -331,7 +331,7 @@ CpuRegisters* cpuRegistersInit()
 {
     CpuRegisters* registers = malloc( sizeof(struct cpu_registers__) );
 
-    registers->p = 0x34;
+    registers->p = 0x04;
     registers->a = registers->x = registers->y = 0x00;
     registers->s = 0xFD;
 
@@ -753,6 +753,7 @@ uint16_t asl(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("ASL\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
+    storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
     setFlagValue( &cpuRegisters->p, C_MASK, getFlagValue(operand, 1 << 7) );
     operand <<= 1;
     storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -770,6 +771,7 @@ uint16_t dec(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("DEC\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
+    storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
     operand--;
     storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
@@ -786,6 +788,7 @@ uint16_t inc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("INC\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
+    storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
     operand++;
     storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
@@ -818,6 +821,7 @@ uint16_t lsr(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("LSR\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
+    storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
     setFlagValue( &cpuRegisters->p, C_MASK, getFlagValue(operand, 1) );
     operand >>= 1;
     storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
@@ -836,6 +840,7 @@ uint16_t rol(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("ROL\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
+    storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
     uint8_t oldCFlag = getFlagValue(cpuRegisters->p, C_MASK);
     setFlagValue( &cpuRegisters->p, C_MASK, getFlagValue(operand, 1 << 7) );
 
@@ -856,6 +861,7 @@ uint16_t ror(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("ROR\n");
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
 
+    storeByte__(operand, cpuRegisters, cpuMemory, addressingMode, extraBytes, NULL);
     uint8_t oldCFlag = getFlagValue(cpuRegisters->p, C_MASK);
     setFlagValue( &cpuRegisters->p, C_MASK, getFlagValue(operand, 1) );
 

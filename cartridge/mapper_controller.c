@@ -15,6 +15,8 @@ static const MapperFunctions NROM = {
 
 static const MapperFunctions MAPPER_ARRAY[MAPPER_ARRAY_SIZE] = {
         [0] = NROM,
+        [1] = NROM, // TODO implement MMC1
+        [3] = NROM, // TODO implement CNROM
         [MAPPER_ARRAY_SIZE - 1] = {NULL, NULL, NULL, NULL}
 };
 

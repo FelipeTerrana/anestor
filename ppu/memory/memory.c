@@ -58,6 +58,8 @@ struct ppu_memory__ {
     uint16_t ppuaddr;
 
     uint8_t addressLatch;
+    uint8_t readBuffer;
+    uint8_t addressMiddleValue;
     bool nmi;
 };
 
@@ -69,9 +71,10 @@ PpuMemory* ppuMemoryInit(Cartridge* cartridge)
     memory->patternTables = patternTablesInit(cartridge);
     memory->nametables = nametablesInit(cartridge);
     memory->paletteRam = paletteRamInit();
-    memory->ppustatus = (1u << 5u) | (1u << 7u);
+    memory->ppustatus = 0;
     memory->ppuctrl = memory->ppumask = memory->oamaddr = memory->ppuaddr = 0;
-    memory->ppuscrollX = memory->ppuscrollY = memory->addressLatch = 0;
+    memory->ppuscrollX = memory->ppuscrollY = memory->addressLatch = memory->readBuffer = 0;
+    memory->addressMiddleValue = 0;
     memory->nmi = false;
 
     return memory;
@@ -99,16 +102,16 @@ static void incrementVramAddress__(PpuMemory* memory)
 
 static uint8_t ppuMemoryRead__(PpuMemory* memory)
 {
-    uint8_t read = 0x0;
+    uint8_t read = memory->readBuffer;
 
     if(memory->ppuaddr >= PPU_CARTRIDGE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= PPU_CARTRIDGE_SPACE_LAST_ADDRESS)
-        read = patternTablesRead(memory->patternTables, memory->ppuaddr);
+        memory->readBuffer = patternTablesRead(memory->patternTables, memory->ppuaddr);
 
     else if(memory->ppuaddr >= NAMETABLE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= NAMETABLE_SPACE_LAST_ADDRESS)
-        read = nametablesRead(memory->nametables, memory->ppuaddr);
+        memory->readBuffer = nametablesRead(memory->nametables, memory->ppuaddr);
 
     else if(memory->ppuaddr >= PALLETTE_RAM_FIRST_ADDRESS && memory->ppuaddr <= PALLETTE_RAM_LAST_ADDRESS)
-        read = paletteRamRead(memory->paletteRam, memory->ppuaddr % PALLETTE_RAM_SIZE);
+        read = memory->readBuffer = paletteRamRead(memory->paletteRam, memory->ppuaddr % PALLETTE_RAM_SIZE);
 
     incrementVramAddress__(memory);
     return read;
@@ -206,12 +209,12 @@ bool ppuRegistersWrite(PpuMemory* memory, uint16_t address, uint8_t value)
         case PPUADDR_CPU_ADDRESS:
             if (memory->addressLatch == 0)
             {
-                memory->ppuaddr = (uint16_t) value << 8u;
+                memory->addressMiddleValue = value;
                 memory->addressLatch = ~((uint8_t) 0);
             }
             else
             {
-                memory->ppuaddr |= value;
+                memory->ppuaddr = ((uint16_t) memory->addressMiddleValue << 8u) | value;
                 memory->addressLatch = 0;
             }
             written = true;
