@@ -40,9 +40,6 @@
 #define SPRITE_ZERO_HIT_MASK 0x40
 #define IN_VBLANK_MASK 0x80
 
-#define TOTAL_TILE_ROWS 60
-#define TOTAL_TILE_COLS 64
-
 struct ppu_memory__ {
     PatternTables* patternTables;
     Nametables* nametables;
@@ -283,31 +280,18 @@ static void renderBackground(PpuMemory* memory, Screen* screen)
 {
     uint8_t tileOffsetX, tileOffsetY;
     uint8_t i;
-    uint8_t nametableNumber, patternTableNumber;
-    uint8_t attributeByte, attributeMask;
-    uint16_t tileAddress, attributeAddress, addressOffset;
+    uint8_t patternTableNumber;
     NesPixel renderBuffer[64];
     Palette palette;
 
     patternTableNumber = getFlagValue(memory->ppuctrl, BACKGROUND_PATTERN_TABLE_MASK);
 
-    for(nametableNumber = 0; nametableNumber < NUMBER_OF_NAMETABLES; nametableNumber++)
+    for(tileOffsetY = 0; tileOffsetY < TOTAL_TILE_ROWS; tileOffsetY++)
     {
-        for (addressOffset = 0; addressOffset < TILES_PER_NAMETABLE; addressOffset++)
+        for(tileOffsetX = 0; tileOffsetX < TOTAL_TILE_COLS; tileOffsetX++)
         {
-            tileAddress = NAMETABLE_SPACE_FIRST_ADDRESS + nametableNumber * NAMETABLE_SIZE + addressOffset;
-
-            tileOffsetX = addressOffset % 0x20 + (nametableNumber % 2) * (TOTAL_TILE_COLS / 2);
-            tileOffsetY = addressOffset / 0x20 + (nametableNumber / 2) * (TOTAL_TILE_ROWS / 2);
-
-            attributeAddress = NAMETABLE_SPACE_FIRST_ADDRESS + nametableNumber * NAMETABLE_SIZE +
-                               ((tileOffsetX / 4) + (tileOffsetY / 4) * 8) + TILES_PER_NAMETABLE;
-
-            attributeMask = 3 << (2 * ((tileOffsetX % 4) / 2 + 2 * ((tileOffsetY % 4) / 2)));
-            attributeByte = nametablesRead(memory->nametables, attributeAddress);
-            paletteRamGetPalette(memory->paletteRam, getFlagValue(attributeByte, attributeMask), BACKGROUND, &palette);
-
-            patternTablesRenderTile(memory->patternTables, nametablesRead(memory->nametables, tileAddress),
+            paletteRamGetPalette(memory->paletteRam, nametablesGetTilePaletteNumber(memory->nametables, tileOffsetX, tileOffsetY), BACKGROUND, &palette);
+            patternTablesRenderTile(memory->patternTables, nametablesGetTileIndex(memory->nametables, tileOffsetX, tileOffsetY),
                                     patternTableNumber, &palette, renderBuffer);
 
             for(i=0; i < 64; i++)

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "../../flag_ops.h"
 
 #define VRAM_SIZE 0x0800
 
@@ -69,4 +70,29 @@ bool nametablesWrite(Nametables* nametables, uint16_t address, uint8_t value)
         nametables->vram[ index ] = value;
         return true;
     }
+}
+
+
+
+uint8_t nametablesGetTileIndex(Nametables* nametables, uint8_t offsetX, uint8_t offsetY)
+{
+    uint8_t nametableNumber = offsetX / (TOTAL_TILE_COLS / 2) + 2 * (offsetY / (TOTAL_TILE_ROWS / 2));
+    uint16_t addressOffset = offsetX % (TOTAL_TILE_COLS / 2) + (TOTAL_TILE_COLS / 2) * (offsetY % (TOTAL_TILE_ROWS / 2));
+
+    uint16_t tileAddress = NAMETABLE_SPACE_START + nametableNumber * NAMETABLE_SIZE + addressOffset;
+    return nametablesRead(nametables, tileAddress);
+}
+
+
+
+uint8_t nametablesGetTilePaletteNumber(Nametables* nametables, uint8_t offsetX, uint8_t offsetY)
+{
+    uint8_t nametableNumber = offsetX / (TOTAL_TILE_COLS / 2) + 2 * (offsetY / (TOTAL_TILE_ROWS / 2));
+    uint16_t attributeAddress = NAMETABLE_SPACE_START + nametableNumber * NAMETABLE_SIZE +
+                                ((offsetX / 4) + (offsetY / 4) * 8) + TILES_PER_NAMETABLE;
+
+    uint8_t attributeMask = 3 << (2 * ((offsetX % 4) / 2 + 2 * ((offsetY % 4) / 2)));
+    uint8_t attributeByte = nametablesRead(nametables, attributeAddress);
+
+    return getFlagValue(attributeByte, attributeMask);
 }
