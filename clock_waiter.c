@@ -39,6 +39,13 @@ void clockWaiterStart(ClockWaiter* clockWaiter, int cycles)
 
 
 
+void clockWaiterAddCycles(ClockWaiter* clockWaiter, int cycles)
+{
+    clockWaiter->cycles += cycles;
+}
+
+
+
 void clockWaiterFinish(ClockWaiter* clockWaiter)
 {
     clockWaiter->realClockTicksToWait = clockWaiter->cycles * (clock_t) (CLOCKS_PER_SEC / clockWaiter->clockSpeedHz);
