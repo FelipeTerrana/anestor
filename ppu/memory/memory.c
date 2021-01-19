@@ -123,6 +123,8 @@ static bool ppuMemoryWrite__(PpuMemory* memory, uint8_t value)
 {
     bool written = false;
 
+    setFlagValue(&memory->ppustatus, 0x1F, value);
+
     if(memory->ppuaddr >= PPU_CARTRIDGE_SPACE_FIRST_ADDRESS && memory->ppuaddr <= PPU_CARTRIDGE_SPACE_LAST_ADDRESS)
         written = patternTablesWrite(memory->patternTables, memory->ppuaddr, value);
 

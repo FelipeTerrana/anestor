@@ -608,7 +608,9 @@ void cpuCheckInterrupt(CpuRegisters* registers, CpuMemory* memory)
     {
         uint16_t nmiAddress;
         stackPushCounter__(registers, memory);
-        stackPush__(registers, memory, registers->p);
+
+        stackPush__(registers, memory, registers->p | 0x20);
+        setFlagValue(&registers->p, I_MASK, 1);
 
         cpuMemoryRead16(memory, NMI_VECTOR_ADDRESS, &nmiAddress);
         cpuMemoryJump(memory, nmiAddress);
@@ -626,13 +628,14 @@ uint16_t adc(CpuRegisters* cpuRegisters,
     uint16_t extraCycles;
     uint8_t operand = getOperand__(cpuRegisters, cpuMemory, addressingMode, extraBytes, &extraCycles);
 
+    bool bothNonNegative = ((int8_t) cpuRegisters->a >= 0) && ((int8_t) operand >= 0);
     uint16_t fullUnsignedResult = cpuRegisters->a + operand + getFlagValue(cpuRegisters->p, C_MASK);
     int16_t fullSignedResult = (int8_t) cpuRegisters->a + (int8_t) operand + getFlagValue(cpuRegisters->p, C_MASK);
     cpuRegisters->a = fullUnsignedResult;
 
     setFlagValue(&cpuRegisters->p, C_MASK, fullUnsignedResult != cpuRegisters->a ? 1 : 0);
     setFlagValue(&cpuRegisters->p, Z_MASK, cpuRegisters->a == 0 ? 1 : 0);
-    setFlagValue(&cpuRegisters->p, V_MASK, fullSignedResult != cpuRegisters->a ? 1 : 0);
+    setFlagValue(&cpuRegisters->p, V_MASK, (bothNonNegative && fullSignedResult < 0) ? 1 : 0);
     setFlagValue(&cpuRegisters->p, N_MASK, fullSignedResult < 0 ? 1 : 0);
 
     return extraCycles;
@@ -731,6 +734,8 @@ uint16_t sbc(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 
     setFlagValue(&cpuRegisters->p, C_MASK, fullUnsignedResult != cpuRegisters->a ? 0 : 1);
     setFlagValue(&cpuRegisters->p, Z_MASK, cpuRegisters->a == 0 ? 1 : 0);
+
+    // TODO fix V flag setting
     setFlagValue(&cpuRegisters->p, V_MASK, fullSignedResult != cpuRegisters->a ? 1 : 0);
     setFlagValue(&cpuRegisters->p, N_MASK, fullSignedResult < 0 ? 1 : 0);
 
@@ -1049,7 +1054,7 @@ uint16_t pha(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 uint16_t php(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMode addressingMode, uint8_t* extraBytes)
 {
 //    printf("PHP\n");
-    stackPush__(cpuRegisters, cpuMemory, cpuRegisters->p);
+    stackPush__(cpuRegisters, cpuMemory, cpuRegisters->p | 0x30);
     return 0;
 }
 
@@ -1119,9 +1124,9 @@ uint16_t brk(CpuRegisters* cpuRegisters, CpuMemory* cpuMemory, enum AddressingMo
 //    printf("BRK\n");
     uint16_t interruptHandler;
     stackPushCounter__(cpuRegisters, cpuMemory);
-    stackPush__(cpuRegisters, cpuMemory, cpuRegisters->p);
+    stackPush__(cpuRegisters, cpuMemory, cpuRegisters->p | 0x30);
 
-    setFlagValue(&cpuRegisters->p, B_MASK, 1);
+    setFlagValue(&cpuRegisters->p, I_MASK, 1);
     cpuMemoryRead16(cpuMemory, IRQ_VECTOR_ADDRESS, &interruptHandler);
     cpuMemoryJump(cpuMemory, interruptHandler);
 
