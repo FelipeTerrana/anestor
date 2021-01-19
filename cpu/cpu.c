@@ -6,6 +6,8 @@
 #include "rp2A03/rp2A03.h"
 #include "../clock_waiter.h"
 
+//#define LOG_CPU_STATUS
+
 struct cpu__ {
     Rp2A03* rp2A03;
     CpuRegisters* registers;
@@ -70,11 +72,24 @@ int cpuLoop(void* data)
 
     uint8_t extraBytes[MAX_OPCODE_EXTRA_BYTES];
 
+    #ifdef LOG_CPU_STATUS
+    FILE* log = fopen("anestor.log", "w");
+    #endif
+
     while ( !(*stopSignal) )
     {
         uint8_t i;
 
         cpuCheckInterrupt(cpu->registers, cpu->memory);
+
+        #ifdef LOG_CPU_STATUS
+        fprintf(log, "0x%04X\n", cpuMemoryGetPc(cpu->memory));
+        fprintf(log, "0x%02X\n", ((uint8_t*) cpu->registers)[0]);
+        fprintf(log, "0x%02X\n", ((uint8_t*) cpu->registers)[1]);
+        fprintf(log, "0x%02X\n", ((uint8_t*) cpu->registers)[2]);
+        fprintf(log, "0x%02X\n", ((uint8_t*) cpu->registers)[3]);
+        fprintf(log, "0x%02X\n", ((uint8_t*) cpu->registers)[4]);
+        #endif
 
         uint8_t opcode = cpuMemoryFetchInstruction(cpu->memory);
 
@@ -93,14 +108,16 @@ int cpuLoop(void* data)
 
             extraClockTicks = instructionFunction(cpu->registers, cpu->memory, addressingMode, extraBytes);
 
-            clockWaiterFinish(clockWaiter);
-
-            clockWaiterStart(clockWaiter, extraClockTicks);
+            clockWaiterAddCycles(clockWaiter, extraClockTicks);
             clockWaiterFinish(clockWaiter);
         }
     }
 
     clockWaiterShutdown(clockWaiter);
+
+    #ifdef LOG_CPU_STATUS
+    fclose(log);
+    #endif
 
     return 0;
 }
